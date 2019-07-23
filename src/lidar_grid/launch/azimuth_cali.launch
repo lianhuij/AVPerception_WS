@@ -1,0 +1,23 @@
+<launch>
+
+  <!--rviz中的fixed frame-->
+  <arg name="fixed_frame" default="velodyne" />
+  <!--裁剪近处自车点x范围-->
+  <arg name="cut_x" default="1.5" />
+  <!--裁剪近处自车点y范围-->
+  <arg name="cut_y" default="0.8" />
+
+  <!--连接VLP16-->
+  <include file="$(find velodyne_pointcloud)/launch/VLP16_points.launch" />
+  
+  <!--激光雷达零方位角标定-->
+  <node pkg="lidar_grid" type="azimuth_calibration" name="azimuth_calibration" >
+    <param name="fixed_frame" value="$(arg fixed_frame)" />
+    <param name="cut_x" value="$(arg cut_x)" />
+    <param name="cut_y" value="$(arg cut_y)" />
+  </node>
+
+  <!--rviz可视化-->
+  <node pkg="rviz" type="rviz" name="rviz" />   
+
+</launch>
