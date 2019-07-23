@@ -33,13 +33,13 @@
   
   <!--读单帧pcd文件>
   <node pkg="lidar_grid" type="pcd_read" name="pcd_read" >
-    <param name="pcd_file" value="/home/lhj/catkin_ws/src/data/road6_0515.pcd" />
+    <param name="pcd_file" value="$(find record_data)/pcdfiles/road6_0515.pcd" />
     <param name="fixed_frame" value="$(arg fixed_frame)" />
     <param name="pub_hz" value="10" />
   </node-->   
 
   <!--读bag文件-->
-  <node pkg="rosbag" type="play" name="player" args="/home/lhj/record_data/bagfiles/test_070302.bag" />    
+  <node pkg="rosbag" type="play" name="player" args="$(find record_data)/bagfiles/test_070302.bag" />    
   
   <!--激光雷达地平面标定-->
   <node pkg="lidar_grid" type="lidar_calibration" name="lidar_calibration" >
