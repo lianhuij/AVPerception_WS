@@ -1,5 +1,6 @@
 build/
 devel/
+record_data/
 devel_isolated/
 el/
 el_isolated/
