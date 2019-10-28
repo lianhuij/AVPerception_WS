@@ -39,7 +39,7 @@
   </node-->   
 
   <!--读bag文件-->
-  <node pkg="rosbag" type="play" name="player" args="$(find record_data)/bagfiles/test_070302.bag" />    
+  <node pkg="rosbag" type="play" name="player" args="$(find record_data)/bagfiles/t071604.bag" respawn="true" />    
   
   <!--激光雷达地平面标定-->
   <node pkg="lidar_grid" type="lidar_calibration" name="lidar_calibration" >
