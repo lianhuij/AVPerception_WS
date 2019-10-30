@@ -1,0 +1,23 @@
+<launch>
+
+  <!--rviz中的fixed frame-->
+  <arg name="fixed_frame" default="velodyne" />
+  <!--radar x方向偏移量-->
+  <arg name="x_offset" default="1.6" />  
+
+  <!--读bag文件-->
+  <node pkg="rosbag" type="play" name="player" args="$(find record_data)/bagfiles/t071604.bag" respawn="true" />    
+
+  <!--接收MPC单片机CAN消息-->
+  <node pkg="raw_data" type="MPC_raw" name="MPC_raw" >
+    <param name="fixed_frame" value="$(arg fixed_frame)" />
+    <param name="x_offset" value="$(arg x_offset)" />
+  </node>
+
+  <!--rviz可视化-->
+  <node pkg="rviz" type="rviz" name="rviz" />   
+
+  <!--rqt_plot查看程序耗时-->
+  <node pkg="rqt_plot" type="rqt_plot" name="plot1" />
+
+</launch>
