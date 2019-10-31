@@ -55,7 +55,11 @@ void MPCDataHandler::canHandler(const can_msgs::Frame& input)
         if(radar_num > 0){
             radar_IsFirst = 0;
             std::vector<raw_data::RadarRaw>().swap(radarRaw);  //清除元素并回收内存
+        }else{
+            raw_data::RadarRawArray no_radar_obj;
+            radar_rawArray_pub.publish(no_radar_obj);
         }
+        return;
     }
     if(radar_IsFirst == 0 && input.id >= 0x551 && input.id <= 0x55F)
     {
@@ -87,6 +91,7 @@ void MPCDataHandler::canHandler(const can_msgs::Frame& input)
             pubRadarRaw(radarRaw);
             radar_IsFirst = 1;
         }
+        return;
     }
 
 //////////////////////////////解析CAN消息 Mobileye///////////////////////////////
@@ -95,7 +100,11 @@ void MPCDataHandler::canHandler(const can_msgs::Frame& input)
         if(cam_num > 0){
             cam_IsFirst = 0;
             std::vector<raw_data::CameraRaw>().swap(camRaw);  //清除元素并回收内存
+        }else{
+            raw_data::CameraRawArray no_cam_obj;
+            cam_rawArray_pub.publish(no_cam_obj);
         }
+        return;
     }
     if(cam_IsFirst == 0 && input.id >= 0x571 && input.id <= 0x57F)
     {
@@ -127,6 +136,7 @@ void MPCDataHandler::canHandler(const can_msgs::Frame& input)
             pubCamRaw(camRaw);
             cam_IsFirst = 1;
         }
+        return;
     }
 }
 
