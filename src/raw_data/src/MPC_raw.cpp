@@ -2,24 +2,12 @@
 #include <can_msgs/Frame.h>
 #include <visualization_msgs/Marker.h>
 #include <visualization_msgs/MarkerArray.h>
+#include <raw_data/CameraRaw.h>
+#include <raw_data/CameraRawArray.h>
+#include <raw_data/RadarRaw.h>
+#include <raw_data/RadarRawArray.h>
 #include <vector>
 #include <cmath>
-
-typedef struct Radar_Data{
-    float distance;
-    float angle;
-    float speed;
-    float x;
-    float y;
-}radar_data;
-
-typedef struct Cam_Data{
-    float x;
-    float y;
-    float vx;
-    int ID;
-    int Type;
-}cam_data;
 
 ///////////////////////MPC单片机CAN消息处理类////////////////////////
 class MPCDataHandler
@@ -29,24 +17,28 @@ protected:
     ros::Subscriber can_sub;
     ros::Publisher radar_raw_pub;
     ros::Publisher cam_raw_pub;
+    ros::Publisher radar_rawArray_pub;
+    ros::Publisher cam_rawArray_pub;
     std::string fixed_frame;
     float x_offset;
-    std::vector<radar_data> radarRaw;
-    std::vector<cam_data> camRaw;
+    std::vector<raw_data::RadarRaw> radarRaw;
+    std::vector<raw_data::CameraRaw> camRaw;
 
 public:
     MPCDataHandler()
     {
         can_sub = nh.subscribe("received_messages", 1, &MPCDataHandler::canHandler, this);    //接收话题：received_messages
-        radar_raw_pub = nh.advertise<visualization_msgs::MarkerArray>("radar_raw", 1);        //发布话题：radar_raw
-        cam_raw_pub = nh.advertise<visualization_msgs::MarkerArray>("cam_raw", 1);         //发布话题：cam_raw
+        radar_raw_pub = nh.advertise<visualization_msgs::MarkerArray>("radar_raw_rviz", 1);   //发布话题：radar_raw_rviz
+        cam_raw_pub = nh.advertise<visualization_msgs::MarkerArray>("cam_raw_rviz", 1);       //发布话题：cam_raw_rviz
+        radar_rawArray_pub = nh.advertise<raw_data::RadarRawArray>("radar_rawArray", 1);      //发布话题：radar_rawArray
+        cam_rawArray_pub = nh.advertise<raw_data::CameraRawArray>("cam_rawArray", 1);         //发布话题：cam_rawArray
         nh.getParam("/MPC_raw/fixed_frame", fixed_frame);
         nh.getParam("/MPC_raw/x_offset", x_offset);
     }
     ~MPCDataHandler(){}
     void canHandler(const can_msgs::Frame& input);
-    void pubRadarRaw(const std::vector<radar_data>& input);
-    void pubCamRaw(const std::vector<cam_data>& input);
+    void pubRadarRaw(const std::vector<raw_data::RadarRaw>& input);
+    void pubCamRaw(const std::vector<raw_data::CameraRaw>& input);
 };
 
 //////////////////////////MPC单片机CAN消息处理函数///////////////////////////
@@ -62,12 +54,12 @@ void MPCDataHandler::canHandler(const can_msgs::Frame& input)
         radar_num = input.data[0];
         if(radar_num > 0){
             radar_IsFirst = 0;
-            std::vector<radar_data>().swap(radarRaw);  //清除元素并回收内存
+            std::vector<raw_data::RadarRaw>().swap(radarRaw);  //清除元素并回收内存
         }
     }
     if(radar_IsFirst == 0 && input.id >= 0x551 && input.id <= 0x55F)
     {
-        radar_data radar_pos;
+        raw_data::RadarRaw radar_pos;
         radar_pos.distance = (float)(input.data[0]*256 + input.data[1])/10;
         radar_pos.angle = (float)(input.data[2]*256 + input.data[3]);
         if(radar_pos.angle < 0x8000)
@@ -102,12 +94,12 @@ void MPCDataHandler::canHandler(const can_msgs::Frame& input)
         cam_num = input.data[0];
         if(cam_num > 0){
             cam_IsFirst = 0;
-            std::vector<cam_data>().swap(camRaw);  //清除元素并回收内存
+            std::vector<raw_data::CameraRaw>().swap(camRaw);  //清除元素并回收内存
         }
     }
     if(cam_IsFirst == 0 && input.id >= 0x571 && input.id <= 0x57F)
     {
-        cam_data cam_pos;
+        raw_data::CameraRaw cam_pos;
         cam_pos.x = (float)(input.data[0]*256 + input.data[1])/16 + x_offset;
         cam_pos.y = (float)(input.data[2]*256 + input.data[3]);
         if(cam_pos.y < 0x8000)
@@ -128,7 +120,7 @@ void MPCDataHandler::canHandler(const can_msgs::Frame& input)
             cam_pos.vx = (cam_pos.vx - 0x10000)/16;
         }
         cam_pos.ID = input.data[6];
-        cam_pos.Type = input.data[7];
+        cam_pos.target_type = input.data[7];
         camRaw.push_back(cam_pos);
         cam_num--;
         if(cam_num == 0){   //接收完本周期数据
@@ -139,9 +131,10 @@ void MPCDataHandler::canHandler(const can_msgs::Frame& input)
 }
 
 //////////////////////////发布radar MarkerArray///////////////////////////
-void MPCDataHandler::pubRadarRaw(const std::vector<radar_data>& input){
+void MPCDataHandler::pubRadarRaw(const std::vector<raw_data::RadarRaw>& input){
     
     static int max_marker_size_ = 0;
+    raw_data::RadarRawArray raw_array;
     visualization_msgs::MarkerArray marker_array;
     visualization_msgs::Marker bbox_marker;
     bbox_marker.header.frame_id = fixed_frame;
@@ -167,6 +160,8 @@ void MPCDataHandler::pubRadarRaw(const std::vector<radar_data>& input){
         bbox_marker.scale.z = 1.7;
         marker_array.markers.push_back(bbox_marker);
         ++marker_id;
+
+        raw_array.data.push_back(input[i]);
     }
 
     if (marker_array.markers.size() > max_marker_size_)
@@ -187,12 +182,14 @@ void MPCDataHandler::pubRadarRaw(const std::vector<radar_data>& input){
         marker_array.markers.push_back(bbox_marker);
     }
     radar_raw_pub.publish(marker_array);
+    radar_rawArray_pub.publish(raw_array);
 }
 
 //////////////////////////发布camera MarkerArray///////////////////////////
-void MPCDataHandler::pubCamRaw(const std::vector<cam_data>& input){
+void MPCDataHandler::pubCamRaw(const std::vector<raw_data::CameraRaw>& input){
     
     static int max_marker_size_ = 0;
+    raw_data::CameraRawArray raw_array;
     visualization_msgs::MarkerArray marker_array;
     visualization_msgs::Marker bbox_marker;
     bbox_marker.header.frame_id = fixed_frame;
@@ -218,6 +215,8 @@ void MPCDataHandler::pubCamRaw(const std::vector<cam_data>& input){
         bbox_marker.scale.z = 1.7;
         marker_array.markers.push_back(bbox_marker);
         ++marker_id;
+
+        raw_array.data.push_back(input[i]);
     }
 
     if (marker_array.markers.size() > max_marker_size_)
@@ -238,6 +237,7 @@ void MPCDataHandler::pubCamRaw(const std::vector<cam_data>& input){
         marker_array.markers.push_back(bbox_marker);
     }
     cam_raw_pub.publish(marker_array);
+    cam_rawArray_pub.publish(raw_array);
 }
 
 ////////////////////////////////////////////主函数///////////////////////////////////////////////////
