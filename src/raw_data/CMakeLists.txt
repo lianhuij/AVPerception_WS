@@ -44,6 +44,8 @@ find_package(catkin REQUIRED COMPONENTS roscpp std_msgs message_generation senso
 
 ## Generate messages in the 'msg' folder
 add_message_files(FILES
+  RearRadarRawArray.msg
+  RearRadarRaw.msg
   CameraRawArray.msg
   RadarRawArray.msg
   CameraRaw.msg
@@ -197,11 +199,22 @@ include_directories(
 ## Add folders to be run by python nosetests
 # catkin_add_nosetests(test)
 
-
-add_executable(MPC_raw
+add_executable(MPC_raw_node
   src/MPC_raw.cpp
+  include/raw_data/MPC_raw.h
+  src/MPC_raw_node.cpp
 )
-add_dependencies(MPC_raw ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-target_link_libraries(MPC_raw
+add_dependencies(MPC_raw_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+target_link_libraries(MPC_raw_node
+  ${catkin_LIBRARIES}
+)
+
+add_executable(rear_raw_node
+  include/raw_data/rear_raw.h
+  src/rear_raw.cpp
+  src/rear_raw_node.cpp
+)
+add_dependencies(rear_raw_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+target_link_libraries(rear_raw_node
   ${catkin_LIBRARIES}
 )

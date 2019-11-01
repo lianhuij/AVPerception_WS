@@ -4,15 +4,21 @@
   <arg name="fixed_frame" default="velodyne" />
   <!--radar x方向偏移量-->
   <arg name="x_offset" default="1.6" />  
+  <arg name="rear_x_offset" default="-1.6" />
 
   <!--读bag文件-->
   <node pkg="rosbag" type="play" name="player" args="$(find record_data)/bagfiles/t071604.bag" respawn="true" />    
 
   <!--接收MPC单片机CAN消息-->
-  <node pkg="raw_data" type="MPC_raw" name="MPC_raw" >
+  <node pkg="raw_data" type="MPC_raw_node" name="MPC_raw_node" >
     <param name="fixed_frame" value="$(arg fixed_frame)" />
     <param name="x_offset" value="$(arg x_offset)" />
   </node>
+
+  <!--node pkg="raw_data" type="rear_raw_node" name="rear_raw_node" >
+    <param name="fixed_frame" value="$(arg fixed_frame)" />
+    <param name="rear_x_offset" value="$(arg rear_x_offset)" />
+  </node-->
 
   <!--rviz可视化-->
   <node pkg="rviz" type="rviz" name="rviz" />   

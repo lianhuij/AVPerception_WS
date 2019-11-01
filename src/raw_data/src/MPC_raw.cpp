@@ -1,3 +1,4 @@
+#include "raw_data/MPC_raw.h"
 #include <ros/ros.h>
 #include <can_msgs/Frame.h>
 #include <visualization_msgs/Marker.h>
@@ -9,37 +10,17 @@
 #include <vector>
 #include <cmath>
 
-///////////////////////MPC单片机CAN消息处理类////////////////////////
-class MPCDataHandler
-{
-protected:
-    ros::NodeHandle nh;
-    ros::Subscriber can_sub;
-    ros::Publisher radar_raw_pub;
-    ros::Publisher cam_raw_pub;
-    ros::Publisher radar_rawArray_pub;
-    ros::Publisher cam_rawArray_pub;
-    std::string fixed_frame;
-    float x_offset;
-    std::vector<raw_data::RadarRaw> radarRaw;
-    std::vector<raw_data::CameraRaw> camRaw;
+MPCDataHandler::MPCDataHandler(){
+    can_sub = nh.subscribe("received_messages", 1, &MPCDataHandler::canHandler, this);    //接收话题：received_messages
+    radar_raw_pub = nh.advertise<visualization_msgs::MarkerArray>("radar_raw_rviz", 1);   //发布话题：radar_raw_rviz
+    cam_raw_pub = nh.advertise<visualization_msgs::MarkerArray>("cam_raw_rviz", 1);       //发布话题：cam_raw_rviz
+    radar_rawArray_pub = nh.advertise<raw_data::RadarRawArray>("radar_rawArray", 1);      //发布话题：radar_rawArray
+    cam_rawArray_pub = nh.advertise<raw_data::CameraRawArray>("cam_rawArray", 1);         //发布话题：cam_rawArray
+    nh.getParam("/MPC_raw_node/fixed_frame", fixed_frame);
+    nh.getParam("/MPC_raw_node/x_offset", x_offset);
+}
 
-public:
-    MPCDataHandler()
-    {
-        can_sub = nh.subscribe("received_messages", 1, &MPCDataHandler::canHandler, this);    //接收话题：received_messages
-        radar_raw_pub = nh.advertise<visualization_msgs::MarkerArray>("radar_raw_rviz", 1);   //发布话题：radar_raw_rviz
-        cam_raw_pub = nh.advertise<visualization_msgs::MarkerArray>("cam_raw_rviz", 1);       //发布话题：cam_raw_rviz
-        radar_rawArray_pub = nh.advertise<raw_data::RadarRawArray>("radar_rawArray", 1);      //发布话题：radar_rawArray
-        cam_rawArray_pub = nh.advertise<raw_data::CameraRawArray>("cam_rawArray", 1);         //发布话题：cam_rawArray
-        nh.getParam("/MPC_raw/fixed_frame", fixed_frame);
-        nh.getParam("/MPC_raw/x_offset", x_offset);
-    }
-    ~MPCDataHandler(){}
-    void canHandler(const can_msgs::Frame& input);
-    void pubRadarRaw(const std::vector<raw_data::RadarRaw>& input);
-    void pubCamRaw(const std::vector<raw_data::CameraRaw>& input);
-};
+MPCDataHandler::~MPCDataHandler(){ }
 
 //////////////////////////MPC单片机CAN消息处理函数///////////////////////////
 void MPCDataHandler::canHandler(const can_msgs::Frame& input)
@@ -250,16 +231,4 @@ void MPCDataHandler::pubCamRaw(const std::vector<raw_data::CameraRaw>& input){
     }
     cam_raw_pub.publish(marker_array);
     cam_rawArray_pub.publish(raw_array);
-}
-
-////////////////////////////////////////////主函数///////////////////////////////////////////////////
-int main(int argc,char** argv)
-{
-    ros::init(argc,argv,"MPC_raw");
-
-    MPCDataHandler handler;
-        
-    ros::spin();
-
-    return 0;
 }
