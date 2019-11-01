@@ -159,7 +159,8 @@ void MPCDataHandler::pubRadarRaw(const std::vector<raw_data::RadarRaw>& input){
     bbox_marker.action = visualization_msgs::Marker::ADD;
 
     int marker_id = 0;
-    for (size_t i = 0; i < input.size(); ++i)
+    raw_array.num = input.size();
+    for (size_t i = 0; i < raw_array.num; ++i)
     {
         bbox_marker.id = marker_id;
         bbox_marker.pose.position.x = input[i].x;
@@ -174,9 +175,9 @@ void MPCDataHandler::pubRadarRaw(const std::vector<raw_data::RadarRaw>& input){
         raw_array.data.push_back(input[i]);
     }
 
-    if (marker_array.markers.size() > max_marker_size_)
+    if (raw_array.num > max_marker_size_)
     {
-        max_marker_size_ = marker_array.markers.size();
+        max_marker_size_ = raw_array.num;
     }
 
     for (size_t i = marker_id; i < max_marker_size_; ++i)
@@ -214,7 +215,8 @@ void MPCDataHandler::pubCamRaw(const std::vector<raw_data::CameraRaw>& input){
     bbox_marker.action = visualization_msgs::Marker::ADD;
 
     int marker_id = 0;
-    for (size_t i = 0; i < input.size(); ++i)
+    raw_array.num = input.size();
+    for (size_t i = 0; i < raw_array.num; ++i)
     {
         bbox_marker.id = marker_id;
         bbox_marker.pose.position.x = input[i].x;
@@ -229,9 +231,9 @@ void MPCDataHandler::pubCamRaw(const std::vector<raw_data::CameraRaw>& input){
         raw_array.data.push_back(input[i]);
     }
 
-    if (marker_array.markers.size() > max_marker_size_)
+    if (raw_array.num > max_marker_size_)
     {
-        max_marker_size_ = marker_array.markers.size();
+        max_marker_size_ = raw_array.num;
     }
 
     for (size_t i = marker_id; i < max_marker_size_; ++i)

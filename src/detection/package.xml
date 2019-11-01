@@ -56,4 +56,7 @@
 <exec_depend>message_generation</exec_depend>
 <exec_depend>sensor_msgs</exec_depend>
 <exec_depend>visualization_msgs</exec_depend>
+<build_depend>raw_data</build_depend>
+<build_export_depend>raw_data</build_export_depend>
+<exec_depend>raw_data</exec_depend>
 </package>
