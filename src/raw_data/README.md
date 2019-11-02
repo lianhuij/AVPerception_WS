@@ -16,10 +16,10 @@ publish topic :
 - rear_radar_raw_rviz
 - rear_radar_rawArray
 
-#### connect kvaser can
-sudo modprobe kvaser_usb
+### connect kvaser can
+sudo modprobe kvaser_usb  
 sudo ip link set can0 up type can bitrate 500000
 
 
-#### save bag data
-rosbag record -O <file> velodyne_points received_messages
+### save bag data
+rosbag record -O file velodyne_points received_messages
