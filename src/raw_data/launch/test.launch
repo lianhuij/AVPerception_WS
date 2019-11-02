@@ -18,7 +18,7 @@
   <arg name="cut_y" default="0.8" />
   <!--radar x方向偏移量-->
   <arg name="x_offset" default="1.6" />  
-  <arg name="rear_x_offset" default="-1.6" />
+  <arg name="rear_x_offset" default="-1.3" />
 
   <!--读bag文件-->
   <node pkg="rosbag" type="play" name="player" args="$(find record_data)/bagfiles/t071604.bag" respawn="true" />    
