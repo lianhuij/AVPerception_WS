@@ -37,8 +37,8 @@ void MPCDataHandler::canHandler(const can_msgs::Frame& input)
             radar_IsFirst = 0;
             std::vector<raw_data::RadarRaw>().swap(radarRaw);  //清除元素并回收内存
         }else{
-            raw_data::RadarRawArray no_radar_obj;
-            radar_rawArray_pub.publish(no_radar_obj);
+            std::vector<raw_data::RadarRaw> no_radar_obj;
+            pubRadarRaw(no_radar_obj);
         }
         return;
     }
@@ -82,8 +82,8 @@ void MPCDataHandler::canHandler(const can_msgs::Frame& input)
             cam_IsFirst = 0;
             std::vector<raw_data::CameraRaw>().swap(camRaw);  //清除元素并回收内存
         }else{
-            raw_data::CameraRawArray no_cam_obj;
-            cam_rawArray_pub.publish(no_cam_obj);
+            std::vector<raw_data::CameraRaw> no_cam_obj;
+            pubCamRaw(no_cam_obj);
         }
         return;
     }

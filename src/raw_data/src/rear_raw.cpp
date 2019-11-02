@@ -98,13 +98,13 @@ void rearDataHandler::pubRadarRaw(const std::vector<raw_data::RearRadarRaw>& inp
             bbox_marker.color.a = 0;
         }
         if(i < 3){
-            bbox_marker.color.r = 1.0f;    //left rear radar colar red
-            bbox_marker.color.g = 0.0f;
-            bbox_marker.color.b = 0.0f;
-        }else{
-            bbox_marker.color.r = 0.0f;    //right rear radar colar blue
+            bbox_marker.color.r = 0.0f;    //left rear radar color blue
             bbox_marker.color.g = 0.0f;
             bbox_marker.color.b = 1.0f;
+        }else{
+            bbox_marker.color.r = 1.0f;    //right rear radar color red
+            bbox_marker.color.g = 0.0f;
+            bbox_marker.color.b = 0.0f;
         }
         marker_array.markers.push_back(bbox_marker);
         raw_array.data.push_back(input[i]);
