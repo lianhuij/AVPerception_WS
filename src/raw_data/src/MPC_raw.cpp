@@ -11,11 +11,11 @@
 #include <cmath>
 
 MPCDataHandler::MPCDataHandler(){
-    can_sub = nh.subscribe("received_messages", 1, &MPCDataHandler::canHandler, this);    //接收话题：received_messages
-    radar_raw_pub = nh.advertise<visualization_msgs::MarkerArray>("radar_raw_rviz", 1);   //发布话题：radar_raw_rviz
-    cam_raw_pub = nh.advertise<visualization_msgs::MarkerArray>("cam_raw_rviz", 1);       //发布话题：cam_raw_rviz
-    radar_rawArray_pub = nh.advertise<raw_data::RadarRawArray>("radar_rawArray", 1);      //发布话题：radar_rawArray
-    cam_rawArray_pub = nh.advertise<raw_data::CameraRawArray>("cam_rawArray", 1);         //发布话题：cam_rawArray
+    can_sub = nh.subscribe("received_messages", 20, &MPCDataHandler::canHandler, this);    //接收话题：received_messages
+    radar_raw_pub = nh.advertise<visualization_msgs::MarkerArray>("radar_raw_rviz", 10);   //发布话题：radar_raw_rviz
+    cam_raw_pub = nh.advertise<visualization_msgs::MarkerArray>("cam_raw_rviz", 10);       //发布话题：cam_raw_rviz
+    radar_rawArray_pub = nh.advertise<raw_data::RadarRawArray>("radar_rawArray", 10);      //发布话题：radar_rawArray
+    cam_rawArray_pub = nh.advertise<raw_data::CameraRawArray>("cam_rawArray", 10);         //发布话题：cam_rawArray
     nh.getParam("/MPC_raw_node/fixed_frame", fixed_frame);
     nh.getParam("/MPC_raw_node/x_offset", x_offset);
 }
@@ -133,14 +133,20 @@ void MPCDataHandler::pubRadarRaw(const std::vector<raw_data::RadarRaw>& input){
     bbox_marker.color.r = 1.0f;    //radar colar red
     bbox_marker.color.g = 0.0f;
     bbox_marker.color.b = 0.0f;
-    bbox_marker.color.a = 0.5;
+    bbox_marker.color.a = 1;
     bbox_marker.lifetime = ros::Duration();
-    //bbox_marker.frame_locked = true;
+    bbox_marker.frame_locked = true;
     bbox_marker.type = visualization_msgs::Marker::CUBE;
     bbox_marker.action = visualization_msgs::Marker::ADD;
+    raw_array.header.stamp = ros::Time::now();
 
     int marker_id = 0;
-    raw_array.num = input.size();
+    if(input.size() <= 15){
+        raw_array.num = input.size();
+    }else{
+        ROS_ERROR("radar raw num > 15");
+        return ;
+    }
     for (size_t i = 0; i < raw_array.num; ++i)
     {
         bbox_marker.id = marker_id;
@@ -153,7 +159,7 @@ void MPCDataHandler::pubRadarRaw(const std::vector<raw_data::RadarRaw>& input){
         marker_array.markers.push_back(bbox_marker);
         ++marker_id;
 
-        raw_array.data.push_back(input[i]);
+        raw_array.data[i] = input[i];
     }
 
     if (raw_array.num > max_marker_size_)
@@ -189,14 +195,20 @@ void MPCDataHandler::pubCamRaw(const std::vector<raw_data::CameraRaw>& input){
     bbox_marker.color.r = 0.0f;
     bbox_marker.color.g = 0.0f;
     bbox_marker.color.b = 1.0f;    //camera colar blue
-    bbox_marker.color.a = 0.5;
+    bbox_marker.color.a = 1;
     bbox_marker.lifetime = ros::Duration();
-    //bbox_marker.frame_locked = true;
+    bbox_marker.frame_locked = true;
     bbox_marker.type = visualization_msgs::Marker::CUBE;
     bbox_marker.action = visualization_msgs::Marker::ADD;
+    raw_array.header.stamp = ros::Time::now();
 
     int marker_id = 0;
-    raw_array.num = input.size();
+    if(input.size() <= 10){
+        raw_array.num = input.size();
+    }else{
+        ROS_ERROR("camera raw num > 10");
+        return ;
+    }
     for (size_t i = 0; i < raw_array.num; ++i)
     {
         bbox_marker.id = marker_id;
@@ -209,7 +221,7 @@ void MPCDataHandler::pubCamRaw(const std::vector<raw_data::CameraRaw>& input){
         marker_array.markers.push_back(bbox_marker);
         ++marker_id;
 
-        raw_array.data.push_back(input[i]);
+        raw_array.data[i] = input[i];
     }
 
     if (raw_array.num > max_marker_size_)

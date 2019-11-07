@@ -8,11 +8,10 @@
 #include <vector>
 
 rearDataHandler::rearDataHandler(){
-    can_sub = nh.subscribe("received_messages", 1, &rearDataHandler::canHandler, this);        //接收话题：received_messages
-    radar_raw_pub = nh.advertise<visualization_msgs::MarkerArray>("rear_radar_raw_rviz", 1);   //发布话题：rear_radar_raw_rviz
-    radar_rawArray_pub = nh.advertise<raw_data::RearRadarRawArray>("rear_radar_rawArray", 1);  //发布话题：rear_radar_rawArray
+    can_sub = nh.subscribe("received_messages", 10, &rearDataHandler::canHandler, this);        //接收话题：received_messages
+    radar_raw_pub = nh.advertise<visualization_msgs::MarkerArray>("rear_radar_raw_rviz", 10);   //发布话题：rear_radar_raw_rviz
+    radar_rawArray_pub = nh.advertise<raw_data::RearRadarRawArray>("rear_radar_rawArray", 10);  //发布话题：rear_radar_rawArray
     nh.getParam("/rear_raw_node/fixed_frame", fixed_frame);
-    nh.getParam("/rear_raw_node/rear_x_offset", rear_x_offset);
 }
 
 rearDataHandler::~rearDataHandler(){ }
@@ -26,14 +25,13 @@ void rearDataHandler::canHandler(const can_msgs::Frame& input)
 //////////////////////////////解析CAN消息 SRR///////////////////////////////
     if(input.id == 0x561){
         radar_IsFirst = 0;
-        radar_num = 6;
+        radar_num = 0;
         std::vector<raw_data::RearRadarRaw>().swap(radarRaw);  //清除元素并回收内存
     }
     if(radar_IsFirst == 0 && input.id >= 0x561 && input.id <= 0x566)
     {
         raw_data::RearRadarRaw radar_pos;
         radar_pos.x = (float)(input.data[0]*256 + input.data[1])/50;
-        radar_pos.x = rear_x_offset - radar_pos.x;
         radar_pos.y = (float)(input.data[2]*256 + input.data[3]);
         if(radar_pos.y < 0x8000)
         {
@@ -52,7 +50,6 @@ void rearDataHandler::canHandler(const can_msgs::Frame& input)
         {
             radar_pos.vx = (radar_pos.vx - 0x10000)/8;
         }
-        radar_pos.vx = -radar_pos.vx;
         radar_pos.vy = (float)(input.data[6]*256 + input.data[7]);
         if(radar_pos.vy < 0x8000)
         {
@@ -63,8 +60,8 @@ void rearDataHandler::canHandler(const can_msgs::Frame& input)
             radar_pos.vy = (radar_pos.vy - 0x10000)/8;
         }
         radarRaw.push_back(radar_pos);
-        radar_num--;
-        if(radar_num == 0){   //接收完本周期数据
+        radar_num++;
+        if(radar_num == 6){   //接收完本周期数据
             pubRadarRaw(radarRaw);
             radar_IsFirst = 1;
         }
@@ -79,11 +76,12 @@ void rearDataHandler::pubRadarRaw(const std::vector<raw_data::RearRadarRaw>& inp
     visualization_msgs::Marker bbox_marker;
     bbox_marker.header.frame_id = fixed_frame;
     bbox_marker.header.stamp = ros::Time::now();
-    bbox_marker.color.a = 0.5;
+    bbox_marker.color.a = 1;
     bbox_marker.lifetime = ros::Duration();
-    //bbox_marker.frame_locked = true;
+    bbox_marker.frame_locked = true;
     bbox_marker.type = visualization_msgs::Marker::CUBE;
     bbox_marker.action = visualization_msgs::Marker::ADD;
+    raw_array.header.stamp = ros::Time::now();
 
     for (size_t i = 0; i < 6; ++i)
     {
@@ -94,7 +92,7 @@ void rearDataHandler::pubRadarRaw(const std::vector<raw_data::RearRadarRaw>& inp
         bbox_marker.scale.x = 0.6;
         bbox_marker.scale.y = 0.6;
         bbox_marker.scale.z = 1.7;
-        if(input[i].x == rear_x_offset){
+        if(input[i].x == 0){
             bbox_marker.color.a = 0;
         }
         if(i < 3){
@@ -107,7 +105,7 @@ void rearDataHandler::pubRadarRaw(const std::vector<raw_data::RearRadarRaw>& inp
             bbox_marker.color.b = 0.0f;
         }
         marker_array.markers.push_back(bbox_marker);
-        raw_array.data.push_back(input[i]);
+        raw_array.data[i] = input[i];
     }
 
     radar_raw_pub.publish(marker_array);

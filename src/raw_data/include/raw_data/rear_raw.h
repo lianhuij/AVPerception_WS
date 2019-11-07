@@ -16,7 +16,6 @@ protected:
     ros::Publisher radar_raw_pub;
     ros::Publisher radar_rawArray_pub;
     std::string fixed_frame;
-    float rear_x_offset;
     std::vector<raw_data::RearRadarRaw> radarRaw;
 
 public:

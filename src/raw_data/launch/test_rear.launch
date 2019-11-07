@@ -1,0 +1,20 @@
+<launch>
+
+  <!--rviz中的fixed frame-->
+  <arg name="fixed_frame" default="velodyne" />
+
+  <!--读bag文件-->
+  <node pkg="rosbag" type="play" name="player" args="$(find record_data)/bagfiles/191104_r1.bag" />    
+
+  <!--接收MPC单片机后雷达CAN消息-->
+  <node pkg="raw_data" type="rear_raw_node" name="rear_raw_node" output="screen">
+    <param name="fixed_frame" value="$(arg fixed_frame)" />
+  </node>
+
+  <!--rviz可视化-->
+  <node pkg="rviz" type="rviz" name="rviz" />   
+
+  <!--rqt_plot-->
+  <node pkg="rqt_plot" type="rqt_plot" name="rqt_plot" />
+
+</launch>
