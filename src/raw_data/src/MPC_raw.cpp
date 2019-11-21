@@ -11,7 +11,7 @@
 #include <cmath>
 
 MPCDataHandler::MPCDataHandler(){
-    can_sub = nh.subscribe("received_messages", 20, &MPCDataHandler::canHandler, this);    //接收话题：received_messages
+    can_sub = nh.subscribe("received_messages", 100, &MPCDataHandler::canHandler, this);    //接收话题：received_messages
     radar_raw_pub = nh.advertise<visualization_msgs::MarkerArray>("radar_raw_rviz", 10);   //发布话题：radar_raw_rviz
     cam_raw_pub = nh.advertise<visualization_msgs::MarkerArray>("cam_raw_rviz", 10);       //发布话题：cam_raw_rviz
     radar_rawArray_pub = nh.advertise<raw_data::RadarRawArray>("radar_rawArray", 10);      //发布话题：radar_rawArray
@@ -27,14 +27,14 @@ void MPCDataHandler::canHandler(const can_msgs::Frame& input)
 {
     static int radar_num;
     static int cam_num;
-    static int radar_IsFirst = 1;
-    static int cam_IsFirst = 1;
+    static bool radar_head = true;
+    static bool cam_head = true;
 
 //////////////////////////////解析CAN消息 ESR///////////////////////////////
     if(input.id == 0x550){
         radar_num = input.data[0];
         if(radar_num > 0){
-            radar_IsFirst = 0;
+            radar_head = false;
             std::vector<raw_data::RadarRaw>().swap(radarRaw);  //清除元素并回收内存
         }else{
             std::vector<raw_data::RadarRaw> no_radar_obj;
@@ -42,7 +42,7 @@ void MPCDataHandler::canHandler(const can_msgs::Frame& input)
         }
         return;
     }
-    if(radar_IsFirst == 0 && input.id >= 0x551 && input.id <= 0x55F)
+    if(!radar_head && input.id >= 0x551 && input.id <= 0x55F)
     {
         raw_data::RadarRaw radar_pos;
         radar_pos.distance = (float)(input.data[0]*256 + input.data[1])/10;
@@ -70,7 +70,7 @@ void MPCDataHandler::canHandler(const can_msgs::Frame& input)
         radar_num--;
         if(radar_num == 0){   //接收完本周期数据
             pubRadarRaw(radarRaw);
-            radar_IsFirst = 1;
+            radar_head = true;
         }
         return;
     }
@@ -79,7 +79,7 @@ void MPCDataHandler::canHandler(const can_msgs::Frame& input)
     if(input.id == 0x570){
         cam_num = input.data[0];
         if(cam_num > 0){
-            cam_IsFirst = 0;
+            cam_head = false;
             std::vector<raw_data::CameraRaw>().swap(camRaw);  //清除元素并回收内存
         }else{
             std::vector<raw_data::CameraRaw> no_cam_obj;
@@ -87,10 +87,10 @@ void MPCDataHandler::canHandler(const can_msgs::Frame& input)
         }
         return;
     }
-    if(cam_IsFirst == 0 && input.id >= 0x571 && input.id <= 0x57F)
+    if(!cam_head && input.id >= 0x571 && input.id <= 0x57F)
     {
         raw_data::CameraRaw cam_pos;
-        cam_pos.x = (float)(input.data[0]*256 + input.data[1])/16 + x_offset;
+        cam_pos.x = (float)(input.data[0]*256 + input.data[1])/16 + x_offset + 3.5;  //camera纵向距离补偿
         cam_pos.y = (float)(input.data[2]*256 + input.data[3]);
         if(cam_pos.y < 0x8000)
         {
@@ -115,7 +115,7 @@ void MPCDataHandler::canHandler(const can_msgs::Frame& input)
         cam_num--;
         if(cam_num == 0){   //接收完本周期数据
             pubCamRaw(camRaw);
-            cam_IsFirst = 1;
+            cam_head = true;
         }
         return;
     }
@@ -130,10 +130,10 @@ void MPCDataHandler::pubRadarRaw(const std::vector<raw_data::RadarRaw>& input){
     visualization_msgs::Marker bbox_marker;
     bbox_marker.header.frame_id = fixed_frame;
     bbox_marker.header.stamp = ros::Time::now();
-    bbox_marker.color.r = 1.0f;    //radar colar red
+    bbox_marker.color.r = 1.0f;    //radar color red
     bbox_marker.color.g = 0.0f;
     bbox_marker.color.b = 0.0f;
-    bbox_marker.color.a = 1;
+    bbox_marker.color.a = 0.5;
     bbox_marker.lifetime = ros::Duration();
     bbox_marker.frame_locked = true;
     bbox_marker.type = visualization_msgs::Marker::CUBE;
@@ -194,8 +194,8 @@ void MPCDataHandler::pubCamRaw(const std::vector<raw_data::CameraRaw>& input){
     bbox_marker.header.stamp = ros::Time::now();
     bbox_marker.color.r = 0.0f;
     bbox_marker.color.g = 0.0f;
-    bbox_marker.color.b = 1.0f;    //camera colar blue
-    bbox_marker.color.a = 1;
+    bbox_marker.color.b = 1.0f;    //camera color blue
+    bbox_marker.color.a = 0.5;
     bbox_marker.lifetime = ros::Duration();
     bbox_marker.frame_locked = true;
     bbox_marker.type = visualization_msgs::Marker::CUBE;

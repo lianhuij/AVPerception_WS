@@ -12,7 +12,7 @@
   <!--rviz可视化-->
   <node pkg="rviz" type="rviz" name="rviz" />   
 
-  <!--rqt_plot显示曲线>
-  <node pkg="rqt_plot" type="rqt_plot" name="rqt_plot" /-->
+  <!--rqt_plot显示曲线-->
+  <node pkg="rqt_plot" type="rqt_plot" name="rqt_plot" />
 
 </launch>

@@ -4,7 +4,7 @@
   <arg name="fixed_frame" default="velodyne" />
 
   <!--读bag文件-->
-  <node pkg="rosbag" type="play" name="player" args="$(find record_data)/bagfiles/191104_r1.bag" />    
+  <node pkg="rosbag" type="play" name="player" args="$(find record_data)/bagfiles/191108_r1.bag" />    
 
   <!--接收MPC单片机后雷达CAN消息-->
   <node pkg="raw_data" type="rear_raw_node" name="rear_raw_node" output="screen">

@@ -20,7 +20,7 @@
   <arg name="x_offset" default="1.6" />  
 
   <!--读bag文件-->
-  <node pkg="rosbag" type="play" name="player" args="$(find record_data)/bagfiles/191104_f1.bag" respawn="true"/>    
+  <node pkg="rosbag" type="play" name="player" args="$(find record_data)/bagfiles/191112_f10.bag" respawn="true" output="screen"/>    
 
   <!--激光雷达地平面标定-->
   <node pkg="lidar_grid" type="lidar_calibration" name="lidar_calibration" >
@@ -35,7 +35,7 @@
   </node>
 
   <!--接收MPC单片机CAN消息-->
-  <node pkg="raw_data" type="MPC_raw_node" name="MPC_raw_node" >
+  <node pkg="raw_data" type="MPC_raw_node" name="MPC_raw_node" output="screen">
     <param name="fixed_frame" value="$(arg fixed_frame)" />
     <param name="x_offset" value="$(arg x_offset)" />
   </node>
