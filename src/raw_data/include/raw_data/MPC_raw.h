@@ -30,8 +30,8 @@ public:
     MPCDataHandler();
     ~MPCDataHandler();
     void canHandler(const can_msgs::Frame& input);
-    void pubRadarRaw(const std::vector<raw_data::RadarRaw>& input);
-    void pubCamRaw(const std::vector<raw_data::CameraRaw>& input);
+    void pubRadarRaw(const std::vector<raw_data::RadarRaw>& input, const ros::Time& radar_stamp);
+    void pubCamRaw(const std::vector<raw_data::CameraRaw>& input, const ros::Time& cam_stamp);
 };
 
 #endif //RAW_DATA_MPC_RAW_H

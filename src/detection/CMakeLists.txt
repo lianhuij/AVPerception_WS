@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 2.8.3)
 project(detection)
 
 ## Compile as C++11, supported in ROS Kinetic and newer
-# add_compile_options(-std=c++11)
+add_compile_options(-std=c++11)
 
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
@@ -194,3 +194,15 @@ include_directories(
 
 ## Add folders to be run by python nosetests
 # catkin_add_nosetests(test)
+
+add_executable(tracker_node
+  include/detection/dbscan.h
+  include/detection/object.h
+  include/detection/radar_tracker.h
+  src/radar_tracker.cpp
+  src/tracker_node.cpp
+)
+add_dependencies(tracker_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+target_link_libraries(tracker_node
+  ${catkin_LIBRARIES}
+)
