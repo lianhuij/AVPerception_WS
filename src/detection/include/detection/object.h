@@ -9,6 +9,9 @@
 #include <eigen3/Eigen/Core>
 #include <eigen3/Eigen/Dense>
 
+const float ped_width  = 0.6;
+const float ped_height = 1.7;
+
 struct Object
 {
     uint64_t id;
@@ -44,8 +47,6 @@ struct LidarPoint
 
 struct TrackCount
 {
-    int loss_cnt;
-    int exist_cnt;
     int confi_inc;
     int confi_dec;
     int confidence;

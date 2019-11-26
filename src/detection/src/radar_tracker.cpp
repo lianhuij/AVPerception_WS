@@ -19,10 +19,10 @@ RadarTracker::RadarTracker()
     ts = 0.05;
     time_stamp = ros::Time::now();
     init_P = Eigen::Matrix4f::Zero(4,4);
-    init_P(0,0) = 5;
-    init_P(1,1) = 5;
-    init_P(2,2) = 100;
-    init_P(3,3) = 100;
+    init_P(0,0) = 1;
+    init_P(1,1) = 1;
+    init_P(2,2) = 16;
+    init_P(3,3) = 16;
     F = Eigen::Matrix4f::Zero(4,4);
     F(0,0) = 1;
     F(1,1) = 1;
@@ -51,12 +51,11 @@ void RadarTracker::EKF(const raw_data::RadarRawArray& input)
     for (int i=0; i<input.num; ++i){
         vec_pts.push_back({input.data[i].x, input.data[i].y, 0, NOT_CLASSIFIED});
     }
-    double eps = 0.85;
-    int min_pts = 0;
+    double eps = radar_cluster_eps;
+    int min_pts = radar_cluster_minPts;
     DBSCAN dbScan(eps, min_pts, vec_pts);    //原始目标聚类
     dbScan.run();
-    std::vector<std::vector<int> > idx;
-    idx = dbScan.getCluster();
+    std::vector<std::vector<int> > idx = dbScan.getCluster();
 
     std::vector<RadarObject> src;
     RadarObject raw;
@@ -106,7 +105,7 @@ void RadarTracker::InitTrack(const RadarObject &obj)
     X.push_back(init_X);
     P.push_back(init_P);
 
-    TrackCount init_info({0,1,0,0,0});
+    TrackCount init_info({0,0,0});
     track_info.push_back(init_info);
 }
 
@@ -132,95 +131,98 @@ void RadarTracker::MatchNN(std::vector<RadarObject> &src)
 
     matched_pair.clear();
     src_matched.clear();
-    src_matched.resize(src_obj_num, 0);
+    src_matched.resize(src_obj_num, false);
     prev_matched.clear();
-    prev_matched.resize(prev_track_num, 0);
+    prev_matched.resize(prev_track_num, false);
 
-    for (int i=0; i<src_obj_num; ++i)
+    Eigen::MatrixXd w_ij(src_obj_num, prev_track_num + src_obj_num);
+    w_ij = Eigen::MatrixXd::Zero(src_obj_num, prev_track_num + src_obj_num);
+
+    // get likelihoods of measurements within track pdfs
+    for ( int i = 0; i < src_obj_num; ++i )
     {
-        RadarObject robj = src[i];
-        float r = robj.r;
-        float theta = robj.theta;
-        float vt = robj.vt;
-        float rx_ = r*cos(theta);
-        float ry_ = r*sin(theta);
-
-        bool find_match = 0;
-        int match_id = -1;
-        float cost = FLT_MAX;
-
-        for (int j=0; j<prev_track_num; ++j)
-        {
+        float r     = src[i].r;
+        float theta = src[i].theta;
+        float vt    = src[i].vt;
+        Eigen::Vector3f z(r, theta, vt);
+        for ( int j = 0; j < prev_track_num; ++j ){
             float rx = X[j](0);
             float ry = X[j](1);
             float vx = X[j](2);
             float vy = X[j](3);
+            float r_1 = rx * rx + ry * ry;
+            float r_2 = sqrt(r_1);
+            float r_3 = r_1 * r_2;
+            float theta_ = atan2(ry, rx);
+            float vt_ = (vx * rx + vy * ry) / r_2;
 
-            if (fabs(rx - rx_) < 1.5
-                && fabs(ry - ry_) < 1)
+            if (fabs(r - r_2) < r_gate && fabs(theta - theta_) < theta_gate && fabs(vt - vt_) < vt_gate) // track gate
             {
-                float tmp_cost = fabs(rx-rx_) + fabs(ry-ry_);
-                if (tmp_cost < cost)
-                {
-                    cost = tmp_cost;
-                    find_match = 1;
-                    match_id = j;
-                }
-            }
-        }
-
-        if (find_match)
-        {
-            if (!prev_matched[match_id])
-            {
-                std::pair<int, int> assignment(i, match_id);
-                matched_pair.push_back(assignment);
-                prev_matched[match_id] = 1;
-                src_matched[i] = 1;
-
-                // track_info[match_id].loss_cnt = 0;
-                // if(track_info[match_id].exist_cnt <100) track_info[match_id].exist_cnt++;
-                track_info[match_id].confi_dec = 0;
-                track_info[match_id].confi_inc++;
-                track_info[match_id].confidence += log(track_info[match_id].confi_inc + 1) / log(1.5f);
-                if (track_info[i].confidence > 100) track_info[i].confidence = 100;
-            }
-            else
-            {
-                int new_match_id = X.size();
-                Eigen::Vector4f X_copy(X[match_id]);
-                Eigen::Matrix4f P_copy(P[match_id]);
-                X.push_back(X_copy);
-                P.push_back(P_copy);
-
-                TrackCount track_info_copy({0,1,0,0,0});
-                track_info.push_back(track_info_copy);
-
-                std::pair<int, int> assignment(i, new_match_id);
-                matched_pair.push_back(assignment);
-                prev_matched.push_back(1);
-                src_matched[i] = 1;
+                Eigen::Vector3f z_(r_2, theta_, vt_);
+                Eigen::Matrix<float,3,4> H = Eigen::Matrix<float,3,4>::Zero(3,4);
+                H(0,0) = rx / r_2;
+                H(0,1) = ry / r_2;
+                H(1,0) = -ry / r_1;
+                H(1,1) = rx / r_1;
+                H(2,0) = -ry * (rx * vy - ry * vx) / r_3;
+                H(2,1) = rx * (rx * vy - ry * vx) / r_3;
+                H(2,2) = rx / r_2;
+                H(2,3) = ry / r_2;
+                Eigen::Matrix3f S = H * P[j] * H.transpose() + R;
+                w_ij(i, j) = normalDistributionDensity<3>(S, z_, z);
+            }else{
+                w_ij(i, j) = 0;
             }
         }
     }
 
-    prev_track_num = X.size();
-    src_obj_num = src.size();
+    // weights for initializing new filters
+    for ( int j = prev_track_num; j < prev_track_num + src_obj_num; ++j ){
+        w_ij(j - prev_track_num, j) = 1e-6;
+    }
 
-    for (int i=0; i<prev_track_num; ++i)
+    // solve the maximum-sum-of-weights problem (i.e. assignment problem)
+    // in this case it is global nearest neighbour by minimizing the distances
+    // over all measurement-filter-associations
+    Auction<double>::Edges assignments = Auction<double>::solve(w_ij);
+
+    // for all found assignments
+    for ( const auto & e : assignments )
+    {
+        // is assignment an assignment from an already existing filter to a measurement?
+        if ( e.y < prev_track_num )
+        {
+            std::pair<int, int> pair(e.x, e.y);  // (measurement, predict)
+            matched_pair.push_back(pair);
+            src_matched[e.x] = true;
+            prev_matched[e.y] = true;
+
+            track_info[e.y].confi_dec = 0;    // target matched, confidence increase
+            track_info[e.y].confi_inc++;
+            track_info[e.y].confidence += log(track_info[e.y].confi_inc + 1) / log(1.5f);
+            if (track_info[e.y].confidence > 100) track_info[e.y].confidence = 100;
+        }
+        else // is this assignment a measurement that is considered new?
+        {
+            // create filter with measurment and keep it
+            InitTrack(src[e.x]);
+        }
+    }
+
+    for (int i=prev_track_num-1; i>=0; --i)  // from back to front to avoid wrongly removing
     {
         if (!prev_matched[i])
         {
-            // track_info[i].loss_cnt++;
-            track_info[i].confi_inc = 0;
+            track_info[i].confi_inc = 0;    // target not matched, confidence decrease
             track_info[i].confi_dec++;
             track_info[i].confidence -= pow(1.5f, track_info[i].confi_dec);
-            if (track_info[i].confidence < -10) track_info[i].confidence = -10;
+
+            if(track_info[i].confidence < 0 || !IsConverged(i))    // remove lost target
+            {
+                RemoveTrack(i);
+            }
         }
     }
-
-    // printf("[MatchNN][matched_track: %zu][unmatched_track: %d][unmatched_obj: %d]\n",
-    //        matched_pair.size(), unmatched_track_num, unmatched_obj_num);
 }
 
 void RadarTracker::Update(std::vector<RadarObject> &src)
@@ -228,9 +230,8 @@ void RadarTracker::Update(std::vector<RadarObject> &src)
     if(X.size() != P.size()){
       ROS_ERROR("radar tracker error: Update state size not equal");
     }
-
-    // a. upgrade matched
-    for (int i=0; i<matched_pair.size(); ++i)
+    
+    for (int i=0; i<matched_pair.size(); ++i)    // upgrade matched
     {
         int src_index = matched_pair[i].first;
         int prev_index = matched_pair[i].second;
@@ -260,42 +261,11 @@ void RadarTracker::Update(std::vector<RadarObject> &src)
         H(2,1) = rx * (rx * vy - ry * vx) / r_3;
         H(2,2) = rx / r_2;
         H(2,3) = ry / r_2;
-
         Eigen::Matrix3f S = H * P[prev_index] * H.transpose() + R;
         Eigen::Matrix<float,4,3> K = P[prev_index] * H.transpose() * S.inverse();
-        double d2 = Y.transpose() * S.inverse() * Y;
-        std::cout << "d2 = " << d2 << std::endl;
-        double gamma = 2*log(0.95/(0.05*0.9*15.75*sqrt(S.determinant())));
-        std::cout << "gamma = " << gamma << std::endl;
 
         X[prev_index] = X[prev_index] + K * Y;
         P[prev_index] = (Eigen::Matrix4f::Identity(4,4) - K * H) * P[prev_index];
-    }
-
-    // b. upgrade prev unmatched
-    // TODO: according to loss count
-    int prev_track_num = X.size();
-    for (int i=prev_track_num-1; i>=0; --i)  // from back to front to avoid wrongly removing
-    {
-        if (!prev_matched[i])
-        {
-            // if (track_info[i].loss_cnt > max_loss_cnt
-            //     || !IsConverged(i))
-            if(track_info[i].confidence < 0 || !IsConverged(i))
-            {
-                RemoveTrack(i);
-            }
-        }
-    }
-
-    // c. upgrade src unmatched
-    int src_obj_num = src.size();
-    for (int i=0; i<src_obj_num; ++i)
-    {
-        if (!src_matched[i])
-        {
-            InitTrack(src[i]);
-        }
     }
 }
 
@@ -353,17 +323,16 @@ void RadarTracker::PubRadarTracks()
     int track_num = X.size();
     for (int i=0; i<track_num; ++i)
     {
-        // if (track_info[i].exist_cnt < min_exist_cnt)  continue;
-        if(track_info[i].confidence < 15) continue;
+        if(track_info[i].confidence < radar_min_confidence) continue;
         if (!IsConverged(i))  continue;
 
         bbox_marker.id = marker_id++;
-        bbox_marker.pose.position.x = X[i](0) + x_offset;;
+        bbox_marker.pose.position.x = X[i](0) + x_offset;   // add offset, convert to velodyne frame
         bbox_marker.pose.position.y = X[i](1);
         bbox_marker.pose.position.z = -0.9;
-        bbox_marker.scale.x = 0.6;
-        bbox_marker.scale.y = 0.6;
-        bbox_marker.scale.z = 1.7;
+        bbox_marker.scale.x = ped_width;
+        bbox_marker.scale.y = ped_width;
+        bbox_marker.scale.z = ped_height;
         marker_array.markers.push_back(bbox_marker);
     }
 

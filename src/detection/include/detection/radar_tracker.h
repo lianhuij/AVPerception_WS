@@ -5,9 +5,14 @@
 #include <raw_data/RadarRawArray.h>
 #include "detection/object.h"
 #include "detection/dbscan.h"
+#include "detection/GNN.h"
 
-const int max_loss_cnt = 5;
-const int min_exist_cnt = 5;
+const int radar_min_confidence   = 15;
+const float radar_cluster_eps    = 0.85;
+const float radar_cluster_minPts = 0;
+const float r_gate     = 1.0;   // r 1.0m, theta 5deg, vt 1.0m/s
+const float theta_gate = 0.08;
+const float vt_gate    = 1.0;
 
 class RadarTracker
 {

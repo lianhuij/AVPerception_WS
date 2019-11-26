@@ -196,6 +196,7 @@ include_directories(
 # catkin_add_nosetests(test)
 
 add_executable(tracker_node
+  include/detection/GNN.h
   include/detection/dbscan.h
   include/detection/object.h
   include/detection/radar_tracker.h
