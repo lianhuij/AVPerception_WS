@@ -9,10 +9,10 @@
 #define __AUCTION_ZERO 0.
 
 template<size_t Dimension>
-const double normalDistributionDensity(const Eigen::Matrix<float, Dimension, Dimension> & cov,
-        const Eigen::Matrix<float, Dimension, 1> & mu, const Eigen::Matrix<float, Dimension, 1> & x )
+const double normalDistributionDensity(const Eigen::Matrix<double, Dimension, Dimension> & cov,
+        const Eigen::Matrix<double, Dimension, 1> & mu, const Eigen::Matrix<double, Dimension, 1> & x )
 {
-    const Eigen::Matrix<float, Dimension, 1> d = mu - x;
+    const Eigen::Matrix<double, Dimension, 1> d = mu - x;
 
     // calculate exponent
     const double e = -0.5 * d.transpose() * cov.inverse() * d;

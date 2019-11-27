@@ -9,6 +9,13 @@
 #include <eigen3/Eigen/Core>
 #include <eigen3/Eigen/Dense>
 
+typedef typename Eigen::Matrix<double,3,1> vector3d;
+typedef typename Eigen::Matrix<double,6,1> vector6d;
+typedef typename Eigen::Matrix<double,3,3> matrix3d;
+typedef typename Eigen::Matrix<double,3,6> matrix3_6d;
+typedef typename Eigen::Matrix<double,6,3> matrix6_3d;
+typedef typename Eigen::Matrix<double,6,6> matrix6d;
+
 const float ped_width  = 0.6;
 const float ped_height = 1.7;
 

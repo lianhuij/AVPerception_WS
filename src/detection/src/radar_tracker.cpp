@@ -18,25 +18,28 @@ RadarTracker::RadarTracker()
     
     ts = 0.05;
     time_stamp = ros::Time::now();
-    init_P = Eigen::Matrix4f::Zero(4,4);
-    init_P(0,0) = 1;
-    init_P(1,1) = 1;
-    init_P(2,2) = 16;
-    init_P(3,3) = 16;
-    F = Eigen::Matrix4f::Zero(4,4);
-    F(0,0) = 1;
-    F(1,1) = 1;
-    F(2,2) = 1;
-    F(3,3) = 1;
-//  Q << dt_4/4*noise_ax,   0,                dt_3/2*noise_ax,  0,
-//       0,                 dt_4/4*noise_ay,  0,                dt_3/2*noise_ay,
-//       dt_3/2*noise_ax,   0,                dt_2*noise_ax,    0,
-//       0,                 dt_3/2*noise_ay,  0,                dt_2*noise_ay;
-    Q << 0.00001, 0,       0.0003, 0,
-         0,       0.00001, 0,      0.0003,
-         0.0003,  0,       0.01,   0,
-         0,       0.0003,  0,      0.01;
-    R = Eigen::Matrix3f::Zero(3,3);
+    init_P = matrix6d::Zero(6,6);
+    init_P(0,0) = 1;    init_P(1,1) = 1;
+    init_P(2,2) = 16;   init_P(3,3) = 16;
+    init_P(4,4) = 16;   init_P(5,5) = 16;
+    F = matrix6d::Zero(6,6);
+    F(0,0) = 1;         F(1,1) = 1;
+    F(2,2) = 1;         F(3,3) = 1;
+    F(4,4) = 1;         F(5,5) = 1;
+//  Q << dt_5/20*noise,  0,              dt_4/8*noise,  0,             dt_3/6*noise,  0,
+//       0,              dt_5/20*noise,  0,             dt_4/8*noise,  0,             dt_3/6*noise,
+//       dt_4/8*noise,   0,              dt_3/3*noise,  0,             dt_2/2*noise,  0,
+//       0,              dt_4/8*noise,   0,             dt_3/3*noise,  0,             dt_2/2*noise,
+//       dt_3/6*noise,   0,              dt_2/2*noise,  0,             dt*noise,      0,
+//       0,              dt_3/6*noise,   0,             dt_2/2*noise,  0,             dt*noise;
+    Q = matrix6d::Zero(6,6);
+    Q << 2e-8,  0,     1e-6,  0,     2e-5,  0,
+         0,     2e-8,  0,     1e-6,  0,     2e-5,
+         1e-6,  0,     5e-5,  0,     1e-3,  0,
+         0,     1e-6,  0,     5e-5,  0,     1e-3,
+         2e-5,  0,     1e-3,  0,     0.05,  0,
+         0,     2e-5,  0,     1e-3,  0,     0.05;
+    R = matrix3d::Zero(3,3);
     R(0,0) = 0.0625;    // 0.25^2
     R(1,1) = 0.0003;    // (1/180*pi)^2
     R(2,2) = 0.0144;    // 0.12^2
@@ -83,10 +86,10 @@ void RadarTracker::EKF(const raw_data::RadarRawArray& input)
     }
     else
     {
-      ts = (float)((input.header.stamp - time_stamp).toSec());
+      ts = (input.header.stamp - time_stamp).toSec();
       time_stamp = input.header.stamp;
       Predict();
-      MatchNN(src);
+      MatchGNN(src);
       Update(src);
     }
     // clock_t end = clock();
@@ -97,11 +100,9 @@ void RadarTracker::EKF(const raw_data::RadarRawArray& input)
 
 void RadarTracker::InitTrack(const RadarObject &obj)
 {
-    Eigen::Vector4f init_X = Eigen::Vector4f::Zero(4);
+    vector6d init_X = vector6d::Zero(6);
     init_X(0) = obj.r * cos(obj.theta);
     init_X(1) = obj.r * sin(obj.theta);
-    init_X(2) = 0;
-    init_X(3) = 0;
     X.push_back(init_X);
     P.push_back(init_P);
 
@@ -117,14 +118,14 @@ void RadarTracker::Predict()
     int prev_track_num = X.size();
     for (int i=0; i<prev_track_num; ++i)
     {
-        F(0,2) = ts;
-        F(1,3) = ts;
+        F(0,2) = F(1,3) = F(2,4) = F(3,5) = ts;
+        F(0,4) = F(1,5) = ts*ts/2;
         X[i] = F * X[i];
         P[i] = F * P[i] * F.transpose() + Q;
     }
 }
 
-void RadarTracker::MatchNN(std::vector<RadarObject> &src)
+void RadarTracker::MatchGNN(std::vector<RadarObject> &src)
 {
     int prev_track_num = X.size();
     int src_obj_num = src.size();
@@ -144,7 +145,7 @@ void RadarTracker::MatchNN(std::vector<RadarObject> &src)
         float r     = src[i].r;
         float theta = src[i].theta;
         float vt    = src[i].vt;
-        Eigen::Vector3f z(r, theta, vt);
+        vector3d z(r, theta, vt);
         for ( int j = 0; j < prev_track_num; ++j ){
             float rx = X[j](0);
             float ry = X[j](1);
@@ -158,8 +159,8 @@ void RadarTracker::MatchNN(std::vector<RadarObject> &src)
 
             if (fabs(r - r_2) < r_gate && fabs(theta - theta_) < theta_gate && fabs(vt - vt_) < vt_gate) // track gate
             {
-                Eigen::Vector3f z_(r_2, theta_, vt_);
-                Eigen::Matrix<float,3,4> H = Eigen::Matrix<float,3,4>::Zero(3,4);
+                vector3d z_(r_2, theta_, vt_);
+                matrix3_6d H = matrix3_6d::Zero(3,6);
                 H(0,0) = rx / r_2;
                 H(0,1) = ry / r_2;
                 H(1,0) = -ry / r_1;
@@ -168,8 +169,8 @@ void RadarTracker::MatchNN(std::vector<RadarObject> &src)
                 H(2,1) = rx * (rx * vy - ry * vx) / r_3;
                 H(2,2) = rx / r_2;
                 H(2,3) = ry / r_2;
-                Eigen::Matrix3f S = H * P[j] * H.transpose() + R;
-                w_ij(i, j) = normalDistributionDensity<3>(S, z_, z);
+                matrix3d S = H * P[j] * H.transpose() + R;
+                w_ij(i, j) = normalDistributionDensity< 3 >(S, z_, z);
             }else{
                 w_ij(i, j) = 0;
             }
@@ -250,9 +251,9 @@ void RadarTracker::Update(std::vector<RadarObject> &src)
         float theta = src[src_index].theta;
         float vt = src[src_index].vt;
 
-        Eigen::Vector3f Y(r-r_2, theta-theta_, vt-vt_);
+        vector3d Y(r-r_2, theta-theta_, vt-vt_);
 
-        Eigen::Matrix<float,3,4> H = Eigen::Matrix<float,3,4>::Zero(3,4);
+        matrix3_6d H = Eigen::MatrixXd::Zero(3,6);
         H(0,0) = rx / r_2;
         H(0,1) = ry / r_2;
         H(1,0) = -ry / r_1;
@@ -261,11 +262,12 @@ void RadarTracker::Update(std::vector<RadarObject> &src)
         H(2,1) = rx * (rx * vy - ry * vx) / r_3;
         H(2,2) = rx / r_2;
         H(2,3) = ry / r_2;
-        Eigen::Matrix3f S = H * P[prev_index] * H.transpose() + R;
-        Eigen::Matrix<float,4,3> K = P[prev_index] * H.transpose() * S.inverse();
+        matrix3d S = H * P[prev_index] * H.transpose() + R;
+        matrix6_3d K = matrix6_3d::Zero(6,3);
+        K = P[prev_index] * H.transpose() * S.inverse();
 
         X[prev_index] = X[prev_index] + K * Y;
-        P[prev_index] = (Eigen::Matrix4f::Identity(4,4) - K * H) * P[prev_index];
+        P[prev_index] = (matrix6d::Identity(6,6) - K * H) * P[prev_index];
     }
 }
 
@@ -293,10 +295,10 @@ bool RadarTracker::IsConverged(int track_index)
     float ry_cov = P[track_index](1,1);
     float vx_cov = P[track_index](2,2);
     float vy_cov = P[track_index](3,3);
-    if (rx_cov < 5
-        && ry_cov < 5
-        && vx_cov < 25
-        && vy_cov < 25)
+    float ax_cov = P[track_index](4,4);
+    float ay_cov = P[track_index](5,5);
+    if (rx_cov < 5 && ry_cov < 5 
+        && vx_cov < 25 && vy_cov < 25 && ax_cov < 25 && ay_cov < 25)
     {
         converged = true;
     }

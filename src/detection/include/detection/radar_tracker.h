@@ -23,26 +23,26 @@ public:
     void EKF(const raw_data::RadarRawArray& input);
     void InitTrack(const RadarObject &obj);
     void Predict();
-    void MatchNN(std::vector<RadarObject> &src);
+    void MatchGNN(std::vector<RadarObject> &src);
     void Update(std::vector<RadarObject> &src);
     void RemoveTrack(int index);
     bool IsConverged(int track_index);
     void PubRadarTracks();
 
 private:
-    std::vector<Eigen::Vector4f> X;  // rx ry vx vy
-    std::vector<Eigen::Matrix4f> P;
+    std::vector<vector6d> X;  // rx ry vx vy ax ay
+    std::vector<matrix6d> P;
     std::vector<TrackCount> track_info;
-    Eigen::Matrix4f init_P;
-    Eigen::Matrix4f F;
-    Eigen::Matrix4f Q;
-    Eigen::Matrix3f R;
+    matrix6d init_P;
+    matrix6d F;
+    matrix6d Q;
+    matrix3d R;
 
     std::vector<std::pair<int, int> > matched_pair;
     std::vector<bool> prev_matched;
     std::vector<bool> src_matched;
 
-    float ts;
+    double ts;
     ros::Time time_stamp;
 };
 
