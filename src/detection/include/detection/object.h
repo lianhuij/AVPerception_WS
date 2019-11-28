@@ -46,6 +46,14 @@ struct RadarObject : Object
     float vt;
 };
 
+struct CameraObject : Object
+{
+    float rx;
+    float ry;
+    float vx;
+    int target_type;
+};
+
 struct LidarPoint
 {
     float rx;
