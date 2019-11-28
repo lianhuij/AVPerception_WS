@@ -8,10 +8,9 @@
 
 const int cam_min_confidence   = 7;
 const int cam_max_confidence   = 30;
-const float cam_newobj_weight  = 0.001;
-const float cam_rx_gate  = 2.0;   // rx 2.0m, ry 1.0m, vx 1.0m/s
+const float cam_newobj_weight  = 0.01;
+const float cam_rx_gate  = 2.0;   // rx 2.0m, ry 1.0m
 const float cam_ry_gate  = 1.0;
-const float cam_vx_gate  = 1.0;
 
 class CameraTracker
 {
@@ -35,8 +34,8 @@ private:
     matrix6d init_P;
     matrix6d F;
     matrix6d Q;
-    matrix3_6d H;
-    matrix3d R;
+    matrix2_6d H;
+    matrix2d R;
 
     std::vector<std::pair<int, int> > matched_pair;
     std::vector<bool> prev_matched;

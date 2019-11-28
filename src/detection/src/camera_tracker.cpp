@@ -5,7 +5,6 @@
 
 extern ros::Publisher cam_filtered_pub;
 extern std::string fixed_frame;
-extern float x_offset;
 
 CameraTracker::CameraTracker()
 {
@@ -27,17 +26,15 @@ CameraTracker::CameraTracker()
     F(2,2) = 1;         F(3,3) = 1;
     F(4,4) = 1;         F(5,5) = 1;
     Q = matrix6d::Zero(6,6);
-    Q(0,0) = 0.2;       Q(1,1) = 0.2;
+    Q(0,0) = 0.1;       Q(1,1) = 0.1;
     Q(2,2) = 0.5;       Q(3,3) = 0.5;
     Q(4,4) = 0.9;       Q(5,5) = 0.9;
-    H = matrix3_6d::Zero(3,6);
+    H = matrix2_6d::Zero(2,6);
     H(0,0) = 1;
     H(1,1) = 1;
-    H(2,2) = 1;
-    R = matrix3d::Zero(3,3);
+    R = matrix2d::Zero(2,2);
     R(0,0) = 4;       // 2^2
     R(1,1) = 1;       // 1^2
-    R(2,2) = 1;       // 1^2
 }
 
 CameraTracker::~CameraTracker() { }
@@ -50,7 +47,6 @@ void CameraTracker::KF(const raw_data::CameraRawArray& input)
     for(int i=0; i<input.num; ++i){
         raw.rx = input.data[i].x;
         raw.ry = input.data[i].y;
-        raw.vx = input.data[i].vx;
         raw.target_type = input.data[i].target_type;
         src.push_back(raw);
     }
@@ -82,7 +78,6 @@ void CameraTracker::InitTrack(const CameraObject &obj)
     vector6d init_X = vector6d::Zero(6);
     init_X(0) = obj.rx;
     init_X(1) = obj.ry;
-    init_X(2) = obj.vx;
     X.push_back(init_X);
     P.push_back(init_P);
 
@@ -124,19 +119,17 @@ void CameraTracker::MatchGNN(std::vector<CameraObject> &src)
     {
         float rx = src[i].rx;
         float ry = src[i].ry;
-        float vx = src[i].vx;
-        vector3d z(rx, ry, vx);
+        vector2d z(rx, ry);
         for ( int j = 0; j < prev_track_num; ++j ){
             float rx_ = X[j](0);
             float ry_ = X[j](1);
-            float vx_ = X[j](2);
 
-            if (fabs(rx - rx_) < cam_rx_gate && fabs(ry - ry_) < cam_ry_gate && fabs(vx - vx_) < cam_vx_gate) // track gate
+            if (fabs(rx - rx_) < cam_rx_gate && fabs(ry - ry_) < cam_ry_gate) // track gate
             {
-                vector3d z_(rx_, ry_, vx_);
-                matrix3d S = H * P[j] * H.transpose() + R;
-                w_ij(i, j) = normalDistributionDensity< 3 >(S, z_, z);
-                std::cout << "w_ij(i, j) = " << w_ij(i, j) <<std::endl;
+                vector2d z_(rx_, ry_);
+                matrix2d S = H * P[j] * H.transpose() + R;
+                w_ij(i, j) = normalDistributionDensity< 2 >(S, z_, z);
+                // std::cout << "w_ij(i, j) = " << w_ij(i, j) <<std::endl;
             }else{
                 w_ij(i, j) = 0;
             }
@@ -205,15 +198,13 @@ void CameraTracker::Update(std::vector<CameraObject> &src)
 
         float rx_ = X[prev_index](0);
         float ry_ = X[prev_index](1);
-        float vx_ = X[prev_index](2);
 
         float rx = src[src_index].rx;
         float ry = src[src_index].ry;
-        float vx = src[src_index].vx;
 
-        vector3d Y(rx-rx_, ry-ry_, vx-vx_);
-        matrix3d S = H * P[prev_index] * H.transpose() + R;
-        matrix6_3d K = matrix6_3d::Zero(6,3);
+        vector2d Y(rx-rx_, ry-ry_);
+        matrix2d S = H * P[prev_index] * H.transpose() + R;
+        matrix6_2d K = matrix6_2d::Zero(6,2);
         K = P[prev_index] * H.transpose() * S.inverse();
 
         X[prev_index] = X[prev_index] + K * Y;
@@ -279,7 +270,7 @@ void CameraTracker::PubCameraTracks()
         if (!IsConverged(i))  continue;
 
         bbox_marker.id = marker_id++;
-        bbox_marker.pose.position.x = X[i](0) + x_offset;   // add offset, convert to velodyne frame
+        bbox_marker.pose.position.x = X[i](0);
         bbox_marker.pose.position.y = X[i](1);
         bbox_marker.pose.position.z = -0.9;
         bbox_marker.scale.x = ped_width;

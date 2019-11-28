@@ -9,12 +9,16 @@
 #include <eigen3/Eigen/Core>
 #include <eigen3/Eigen/Dense>
 
+typedef typename Eigen::Matrix<double,2,1> vector2d;
 typedef typename Eigen::Matrix<double,3,1> vector3d;
 typedef typename Eigen::Matrix<double,6,1> vector6d;
+typedef typename Eigen::Matrix<double,2,2> matrix2d;
 typedef typename Eigen::Matrix<double,3,3> matrix3d;
+typedef typename Eigen::Matrix<double,6,6> matrix6d;
+typedef typename Eigen::Matrix<double,2,6> matrix2_6d;
+typedef typename Eigen::Matrix<double,6,2> matrix6_2d;
 typedef typename Eigen::Matrix<double,3,6> matrix3_6d;
 typedef typename Eigen::Matrix<double,6,3> matrix6_3d;
-typedef typename Eigen::Matrix<double,6,6> matrix6d;
 
 const float ped_width  = 0.6;
 const float ped_height = 1.7;
@@ -50,7 +54,6 @@ struct CameraObject : Object
 {
     float rx;
     float ry;
-    float vx;
     int target_type;
 };
 
