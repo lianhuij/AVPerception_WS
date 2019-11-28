@@ -26,23 +26,14 @@ RadarTracker::RadarTracker()
     F(0,0) = 1;         F(1,1) = 1;
     F(2,2) = 1;         F(3,3) = 1;
     F(4,4) = 1;         F(5,5) = 1;
-//  Q << dt_5/20*noise,  0,              dt_4/8*noise,  0,             dt_3/6*noise,  0,
-//       0,              dt_5/20*noise,  0,             dt_4/8*noise,  0,             dt_3/6*noise,
-//       dt_4/8*noise,   0,              dt_3/3*noise,  0,             dt_2/2*noise,  0,
-//       0,              dt_4/8*noise,   0,             dt_3/3*noise,  0,             dt_2/2*noise,
-//       dt_3/6*noise,   0,              dt_2/2*noise,  0,             dt*noise,      0,
-//       0,              dt_3/6*noise,   0,             dt_2/2*noise,  0,             dt*noise;
     Q = matrix6d::Zero(6,6);
-    Q << 2e-8,  0,     1e-6,  0,     2e-5,  0,
-         0,     2e-8,  0,     1e-6,  0,     2e-5,
-         1e-6,  0,     5e-5,  0,     1e-3,  0,
-         0,     1e-6,  0,     5e-5,  0,     1e-3,
-         2e-5,  0,     1e-3,  0,     0.05,  0,
-         0,     2e-5,  0,     1e-3,  0,     0.05;
+    Q(0,0) = 0.05;      Q(1,1) = 0.05;
+    Q(2,2) = 0.1;       Q(3,3) = 0.1;
+    Q(4,4) = 0.3;       Q(5,5) = 0.3;
     R = matrix3d::Zero(3,3);
-    R(0,0) = 0.0625;    // 0.25^2
-    R(1,1) = 0.0003;    // (1/180*pi)^2
-    R(2,2) = 0.0144;    // 0.12^2
+    R(0,0) = 0.1225;    // 0.35^2
+    R(1,1) = 0.0012;    // (2/180*pi)^2
+    R(2,2) = 0.1225;    // 0.35^2
 }
 
 RadarTracker::~RadarTracker() { }
@@ -179,7 +170,7 @@ void RadarTracker::MatchGNN(std::vector<RadarObject> &src)
 
     // weights for initializing new filters
     for ( int j = prev_track_num; j < prev_track_num + src_obj_num; ++j ){
-        w_ij(j - prev_track_num, j) = 1e-6;
+        w_ij(j - prev_track_num, j) = radar_newobj_weight;
     }
 
     // solve the maximum-sum-of-weights problem (i.e. assignment problem)
@@ -201,7 +192,7 @@ void RadarTracker::MatchGNN(std::vector<RadarObject> &src)
             track_info[e.y].confi_dec = 0;    // target matched, confidence increase
             track_info[e.y].confi_inc++;
             track_info[e.y].confidence += log(track_info[e.y].confi_inc + 1) / log(1.5f);
-            if (track_info[e.y].confidence > 100) track_info[e.y].confidence = 100;
+            if (track_info[e.y].confidence > radar_max_confidence) track_info[e.y].confidence = radar_max_confidence;
         }
         else // is this assignment a measurement that is considered new?
         {
