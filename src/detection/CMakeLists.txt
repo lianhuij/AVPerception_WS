@@ -196,6 +196,8 @@ include_directories(
 # catkin_add_nosetests(test)
 
 add_executable(tracker_node
+  src/radar_cmkf_tracker.cpp
+  include/detection/radar_cmkf_tracker.h
   include/detection/camera_tracker.h
   src/camera_tracker.cpp
   include/detection/GNN.h
