@@ -1,9 +1,11 @@
+#ifndef DETECTION_DBSCAN_H
+#define DETECTION_DBSCAN_H
+
 #include <vector>
 #include <cmath>
 #include <map>
 #include "detection/object.h"
 
-const int NOISE = -2;
 const int NOT_CLASSIFIED = -1;
 
 class Point {
@@ -40,13 +42,11 @@ public:
             
             if(isCoreObject(i)) {
                 dfs(i, ++clusterIdx);
-            } else {
-                points[i].cluster = NOISE;
             }
         }
         cluster.resize(clusterIdx+1);
         for(int i=0; i<size; ++i) {
-            if(points[i].cluster != NOISE) {
+            if(points[i].cluster != NOT_CLASSIFIED) {
                 cluster[points[i].cluster].push_back(i);
             }
         }
@@ -83,3 +83,5 @@ public:
         return cluster;
     }
 };
+
+#endif // DETECTION_DBSCAN_H

@@ -7,7 +7,7 @@ add_compile_options(-std=c++11)
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
-find_package(catkin REQUIRED COMPONENTS roscpp std_msgs message_generation sensor_msgs visualization_msgs raw_data)
+find_package(catkin REQUIRED COMPONENTS roscpp std_msgs message_generation sensor_msgs visualization_msgs raw_data pcl_conversions pcl_ros)
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
@@ -209,5 +209,13 @@ add_executable(tracker_node
 )
 add_dependencies(tracker_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 target_link_libraries(tracker_node
+  ${catkin_LIBRARIES}
+)
+
+add_executable(lidar_cluster_node
+  src/lidar_cluster_node.cpp
+)
+add_dependencies(lidar_cluster_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+target_link_libraries(lidar_cluster_node
   ${catkin_LIBRARIES}
 )

@@ -116,7 +116,7 @@ void RadarTracker::Predict()
     }
 }
 
-void RadarTracker::MatchGNN(std::vector<RadarObject> &src)
+void RadarTracker::MatchGNN(const std::vector<RadarObject>& src)
 {
     int prev_track_num = X.size();
     int src_obj_num = src.size();
@@ -217,7 +217,7 @@ void RadarTracker::MatchGNN(std::vector<RadarObject> &src)
     }
 }
 
-void RadarTracker::Update(std::vector<RadarObject> &src)
+void RadarTracker::Update(const std::vector<RadarObject>& src)
 {
     if(X.size() != P.size()){
       ROS_ERROR("radar tracker error: Update state size not equal");

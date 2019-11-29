@@ -25,8 +25,8 @@ public:
     void EKF(const raw_data::RadarRawArray& input);
     void InitTrack(const RadarObject &obj);
     void Predict();
-    void MatchGNN(std::vector<RadarObject> &src);
-    void Update(std::vector<RadarObject> &src);
+    void MatchGNN(const std::vector<RadarObject>& src);
+    void Update(const std::vector<RadarObject>& src);
     void RemoveTrack(int index);
     bool IsConverged(int track_index);
     void PubRadarTracks();

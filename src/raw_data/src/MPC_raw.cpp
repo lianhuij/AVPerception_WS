@@ -178,9 +178,9 @@ void MPCDataHandler::pubRadarRaw(const std::vector<raw_data::RadarRaw>& input, c
         bbox_marker.pose.position.x = 0;
         bbox_marker.pose.position.y = 0;
         bbox_marker.pose.position.z = 0;
-        bbox_marker.scale.x = 0;
-        bbox_marker.scale.y = 0;
-        bbox_marker.scale.z = 0;
+        bbox_marker.scale.x = 0.1;
+        bbox_marker.scale.y = 0.1;
+        bbox_marker.scale.z = 0.1;
         marker_array.markers.push_back(bbox_marker);
     }
     radar_raw_pub.publish(marker_array);
@@ -240,9 +240,9 @@ void MPCDataHandler::pubCamRaw(const std::vector<raw_data::CameraRaw>& input, co
         bbox_marker.pose.position.x = 0;
         bbox_marker.pose.position.y = 0;
         bbox_marker.pose.position.z = 0;
-        bbox_marker.scale.x = 0;
-        bbox_marker.scale.y = 0;
-        bbox_marker.scale.z = 0;
+        bbox_marker.scale.x = 0.1;
+        bbox_marker.scale.y = 0.1;
+        bbox_marker.scale.z = 0.1;
         marker_array.markers.push_back(bbox_marker);
     }
     cam_raw_pub.publish(marker_array);

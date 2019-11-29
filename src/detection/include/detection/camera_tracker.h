@@ -21,8 +21,8 @@ public:
     void KF(const raw_data::CameraRawArray& input);
     void InitTrack(const CameraObject &obj);
     void Predict();
-    void MatchGNN(std::vector<CameraObject> &src);
-    void Update(std::vector<CameraObject> &src);
+    void MatchGNN(const std::vector<CameraObject>& src);
+    void Update(const std::vector<CameraObject>& src);
     void RemoveTrack(int index);
     bool IsConverged(int track_index);
     void PubCameraTracks();

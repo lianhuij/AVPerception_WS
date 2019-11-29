@@ -64,31 +64,38 @@ public:
         radius = R*grid_size_r;
     }
 
-    void calibration(const sensor_msgs::PointCloud2& input);
+    void calibration(const sensor_msgs::PointCloud2ConstPtr& input);
 };
 
 //////////////////////////激光雷达点云地平面校正函数///////////////////////////
-void LidarCloudHandler::calibration(const sensor_msgs::PointCloud2& input)
+void LidarCloudHandler::calibration(const sensor_msgs::PointCloud2ConstPtr& input)
 {
     clock_t start = clock();
-    int i = 0;
-    int j = 0;
-    int m = 0;
 
     pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_raw_ptr  (new pcl::PointCloud<pcl::PointXYZ>);
     pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_reduce_ptr  (new pcl::PointCloud<pcl::PointXYZ>);
     pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_temp_ptr (new pcl::PointCloud<pcl::PointXYZ>);
     pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_trans_ptr (new pcl::PointCloud<pcl::PointXYZ>);
 
-    pcl::fromROSMsg(input, *cloud_raw_ptr);
+    pcl::fromROSMsg(*input, *cloud_raw_ptr);
 
     Grid grid[R][TH];      //建立极坐标栅格地图grid
     float r = 0, th = 0;
     int a = 0, t = 0;
 
 //////////////////////////////遍历输入点云，初步筛选，将点划入极坐标栅格内///////////////////////////////
-    for (m=0; m<cloud_raw_ptr->size(); ++m)   
+    for (int m=0; m<cloud_raw_ptr->size(); ++m)   
     {
+        if(cloud_raw_ptr->points[m].x < 0)   
+        {
+            continue;  //所有后部的点在栅格地图中排除
+        }
+
+        if(cloud_raw_ptr->points[m].z > 0)   
+        {
+            continue;  //所有高于车辆高度的点在栅格地图中排除
+        }
+        
         if(cloud_raw_ptr->points[m].x > -cut_x && cloud_raw_ptr->points[m].x < cut_x
            && cloud_raw_ptr->points[m].y > -cut_y && cloud_raw_ptr->points[m].y < cut_y)
         {
@@ -103,11 +110,6 @@ void LidarCloudHandler::calibration(const sensor_msgs::PointCloud2& input)
         if(cloud_raw_ptr->points[m].y > radius || cloud_raw_ptr->points[m].y < -radius)
         {
             continue;  //排除y坐标绝对值大于半径的数据
-        }
-
-        if(cloud_raw_ptr->points[m].z > 0)   
-        {
-            continue;  //所有高于车辆高度的点在栅格地图中排除
         }
         
         r = sqrt(cloud_raw_ptr->points[m].x * cloud_raw_ptr->points[m].x
@@ -146,9 +148,9 @@ void LidarCloudHandler::calibration(const sensor_msgs::PointCloud2& input)
     pcl::PointXYZ minpoint, maxpoint;
     double h = 0;
     
-    for (i=0; i<R; ++i)      //遍历栅格地图grid
+    for (int i=0; i<R; ++i)      //遍历栅格地图grid
     {
-        for(j=0; j<TH; ++j)
+        for(int j=0; j<TH; ++j)
         {
             if(grid[i][j].grid_cloud_ptr->size()>0)    //如果某栅格内有数据点
             {
@@ -157,7 +159,7 @@ void LidarCloudHandler::calibration(const sensor_msgs::PointCloud2& input)
                 
                 if (h<threshold && maxpoint.z<-1)  //最大高度差小于阈值且z小于-1m的点归为地面候选点
                 {
-                    for(m=0; m<grid[i][j].grid_cloud_ptr->size(); ++m)
+                    for(int m=0; m<grid[i][j].grid_cloud_ptr->size(); ++m)
                     {
                         cloud_temp_ptr->push_back(grid[i][j].grid_cloud_ptr->points[m]);      //地面候选点云
                     }       
@@ -166,10 +168,9 @@ void LidarCloudHandler::calibration(const sensor_msgs::PointCloud2& input)
         }
     }
 
-    //应用随机采样一致性算法进一步提取地面点云
+    //应用随机采样一致性算法进一步提取地面点云，得到原始地面法向量
     pcl::ModelCoefficients::Ptr coefficients (new pcl::ModelCoefficients());
     pcl::PointIndices::Ptr inliers (new pcl::PointIndices());
-
     pcl::SACSegmentation<pcl::PointXYZ> seg;
     seg.setModelType (pcl::SACMODEL_PLANE);
     seg.setMethodType (pcl::SAC_RANSAC);
@@ -180,16 +181,14 @@ void LidarCloudHandler::calibration(const sensor_msgs::PointCloud2& input)
     seg.segment (*inliers, *coefficients);
     
     Eigen::Vector3f before, after;
-    before[0] = coefficients->values[0];
-    before[1] = coefficients->values[1];
-    before[2] = coefficients->values[2];
-    after[0] = 0;
-    after[1] = 0;
-    after[2] = 1;
-
+    before(0) = coefficients->values[0];
+    before(1) = coefficients->values[1];
+    before(2) = coefficients->values[2];
+    after(0) = 0;
+    after(1) = 0;
+    after(2) = 1;
     before.normalize();
     after.normalize();
- 
     float angle = acos(before.dot(after));            //旋转角
     Eigen::Vector3f p_rotate =before.cross(after);    //旋转轴
     p_rotate.normalize();
@@ -213,13 +212,12 @@ void LidarCloudHandler::calibration(const sensor_msgs::PointCloud2& input)
     sensor_msgs::PointCloud2 pcl_output;
     pcl::toROSMsg(*cloud_trans_ptr, pcl_output);
     pcl_output.header.frame_id = fixed_frame;
-
+    pcl_output.header.stamp = input->header.stamp;
     pc_pub.publish(pcl_output);  //发布校正点云
 
     visualization_msgs::Marker marker;
-
     marker.header.frame_id = fixed_frame;
-    marker.header.stamp = ros::Time::now();
+    marker.header.stamp = input->header.stamp;
     marker.type = visualization_msgs::Marker::CUBE;
     marker.action = visualization_msgs::Marker::ADD;
     marker.pose.position.x = 0;
@@ -236,7 +234,6 @@ void LidarCloudHandler::calibration(const sensor_msgs::PointCloud2& input)
     marker.color.g = 0;
     marker.color.b = 0.7;
     marker.color.a = 0.7;
-
     marker.lifetime = ros::Duration();
     ego_pub.publish(marker);  //发布自车几何形状
 

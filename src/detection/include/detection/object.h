@@ -58,7 +58,7 @@ struct CameraObject : Object
     int target_type;
 };
 
-struct LidarPoint
+struct LidarObject : Object
 {
     float rx;
     float ry;

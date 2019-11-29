@@ -59,4 +59,10 @@
 <build_depend>raw_data</build_depend>
 <build_export_depend>raw_data</build_export_depend>
 <exec_depend>raw_data</exec_depend>
+<build_depend>pcl_conversions</build_depend>
+<build_depend>pcl_ros</build_depend>
+<build_export_depend>pcl_conversions</build_export_depend>
+<build_export_depend>pcl_ros</build_export_depend>
+<exec_depend>pcl_conversions</exec_depend>
+<exec_depend>pcl_ros</exec_depend>
 </package>

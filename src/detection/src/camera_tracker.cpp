@@ -100,7 +100,7 @@ void CameraTracker::Predict()
     }
 }
 
-void CameraTracker::MatchGNN(std::vector<CameraObject> &src)
+void CameraTracker::MatchGNN(const std::vector<CameraObject>& src)
 {
     int prev_track_num = X.size();
     int src_obj_num = src.size();
@@ -185,7 +185,7 @@ void CameraTracker::MatchGNN(std::vector<CameraObject> &src)
     }
 }
 
-void CameraTracker::Update(std::vector<CameraObject> &src)
+void CameraTracker::Update(const std::vector<CameraObject>& src)
 {
     if(X.size() != P.size()){
       ROS_ERROR("camera tracker error: Update state size not equal");

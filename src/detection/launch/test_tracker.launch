@@ -17,10 +17,12 @@
   <!--裁剪近处自车点y范围-->
   <arg name="cut_y" default="0.8" />
   <!--radar x方向偏移量-->
-  <arg name="x_offset" default="1.6" />  
+  <arg name="x_offset" default="1.6" />
+  <!--lidar ROI width-->
+  <arg name="ROI_width" default="5.0" />
 
   <!--读bag文件-->
-  <node pkg="rosbag" type="play" name="player" args="$(find record_data)/bagfiles/191112_f9.bag" respawn="true" />    
+  <node pkg="rosbag" type="play" name="player" args="$(find record_data)/bagfiles/191112_f10.bag" respawn="true" />    
 
   <!--激光雷达地平面标定-->
   <node pkg="lidar_grid" type="lidar_calibration" name="lidar_calibration" >
@@ -40,6 +42,11 @@
     <param name="x_offset" value="$(arg x_offset)" />
   </node>
 
+  <node pkg="detection" type="lidar_cluster_node" name="lidar_cluster_node" output="screen">
+    <param name="fixed_frame" value="$(arg fixed_frame)" />
+    <param name="ROI_width" value="$(arg ROI_width)" />
+  </node>
+
   <!--目标跟踪模块-->
   <node pkg="detection" type="tracker_node" name="tracker_node" output="screen">
     <param name="fixed_frame" value="$(arg fixed_frame)" />
@@ -49,7 +56,7 @@
   <!--rviz可视化-->
   <node pkg="rviz" type="rviz" name="rviz" />   
 
-  <!--rqt_plot>
-  <node pkg="rqt_plot" type="rqt_plot" name="rqt_plot" /-->
+  <!--rqt_plot-->
+  <node pkg="rqt_plot" type="rqt_plot" name="rqt_plot" />
 
 </launch>
