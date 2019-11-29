@@ -30,6 +30,12 @@ RadarCMKFTracker::RadarCMKFTracker()
     Q(0,0) = 0.05;      Q(1,1) = 0.05;
     Q(2,2) = 0.1;       Q(3,3) = 0.1;
     Q(4,4) = 0.3;       Q(5,5) = 0.3;
+    Hp = matrix2_6d::Zero(2,6);
+    Hp(0,0) = 1;  Hp(1,1) = 1;
+    R = matrix3d::Zero(3,3);
+    R(0,0) = 0.1225;    // 0.35^2
+    R(1,1) = 0.0012;    // (2/180*pi)^2
+    R(2,2) = 0.1225;    // 0.35^2
 }
 
 RadarCMKFTracker::~RadarCMKFTracker() { }
@@ -156,10 +162,6 @@ void RadarCMKFTracker::MatchGNN(std::vector<RadarObject> &src)
                 H(2,1) = rx * (rx * vy - ry * vx) / r_3;
                 H(2,2) = rx / r_2;
                 H(2,3) = ry / r_2;
-                matrix3d R = matrix3d::Zero(3,3);
-                R(0,0) = 0.1225;    // 0.35^2
-                R(1,1) = 0.0012;    // (2/180*pi)^2
-                R(2,2) = 0.1225;    // 0.35^2
                 matrix3d S = H * P[j] * H.transpose() + R;
                 w_ij(i, j) = normalDistributionDensity< 3 >(S, z_, z);
             }else{
@@ -223,26 +225,23 @@ void RadarCMKFTracker::Update(std::vector<RadarObject> &src)
       ROS_ERROR("radar tracker error: Update state size not equal");
     }
     
+    double sigmar2 = R(0,0);
+    double sigma2  = R(1,1);
+    double sigmav2 = R(2,2);
+    double e_2 = exp(-2*sigma2);
+    double e_4 = pow(e_2,2);
+    double a_1 = cosh(sigma2);
+    double a_2 = cosh(2*sigma2);
+    double b_1 = sinh(sigma2);
+    double b_2 = sinh(2*sigma2);
     for (int i=0; i<matched_pair.size(); ++i)    // upgrade matched
     {
         int src_index  = matched_pair[i].first;
         int prev_index = matched_pair[i].second;
-
         float r     = src[src_index].r;
         float theta = src[src_index].theta;
         float vt    = src[src_index].vt;
 
-        matrix2_6d Hp = matrix2_6d::Zero(2,6);
-        Hp(0,0) = 1;  Hp(1,1) = 1;
-        double sigma2  = 0.0012;
-        double sigmar2 = 0.1225;
-        double sigmav2 = 0.1225;
-        double e_2 = exp(-2*sigma2);
-        double e_4 = pow(e_2,2);
-        double a_1 = cosh(sigma2);
-        double a_2 = cosh(2*sigma2);
-        double b_1 = sinh(sigma2);
-        double b_2 = sinh(2*sigma2);
         matrix2d Rp;
         Rp(0,0) = r*r*e_2*(pow(cos(theta),2)*(a_2 -a_1)+ pow(sin(theta),2)*(b_2 -b_1))+
                   sigmar2*e_2*(pow(cos(theta),2)*(2*a_2 -a_1)+ pow(sin(theta),2)*(2*b_2 -b_1));
@@ -251,8 +250,8 @@ void RadarCMKFTracker::Update(std::vector<RadarObject> &src)
         Rp(0,1) = Rp(1,0) = sin(theta)*cos(theta)*e_4*(sigmar2+ (r*r+sigmar2)*(1-exp(sigma2)));
         matrix2d Sp   = Hp*P[prev_index]*Hp.transpose() + Rp;
         matrix6_2d Kp = P[prev_index]*Hp.transpose()*Sp.inverse();
-        vector2d zp   = (r*cos(theta), r*sin(theta));
-        vector2d up   = (r*cos(theta)*(exp(-sigma2)- exp(-0.5*sigma2)), r*sin(theta)*(exp(-sigma2)- exp(-0.5*sigma2)));
+        vector2d zp(r*cos(theta), r*sin(theta));
+        vector2d up(r*cos(theta)*(exp(-sigma2)- exp(-0.5*sigma2)), r*sin(theta)*(exp(-sigma2)- exp(-0.5*sigma2)));
         X[prev_index] = X[prev_index] + Kp*(zp - up - Hp*X[prev_index]);
         P[prev_index] = (matrix6d::Identity(6,6) - Kp * Hp) * P[prev_index];
 
@@ -263,7 +262,11 @@ void RadarCMKFTracker::Update(std::vector<RadarObject> &src)
         Rp_(0,0) = Rx_;  Rp_(0,1) = Ry_;
         matrix1_2d Lk = -Rp_*Rp.inverse();
         double Ra_ = R_ - Rp_*Rp.inverse()*Rp_.transpose();
-        vector6d He = (Lk(0,0)+X[prev_index](2), Lk(0,1)+X[prev_index](3), X[prev_index](0), X[prev_index](1), 0, 0);
+        vector6d He = vector6d::Zero(6,1);
+        He(0) = Lk(0,0)+X[prev_index](2);
+        He(1) = Lk(0,1)+X[prev_index](3);
+        He(2) = X[prev_index](0);
+        He(3) = X[prev_index](1);
         double Ak = P[prev_index](0,0)*P[prev_index](2,2)+ P[prev_index](1,1)*P[prev_index](3,3)+ 
                     2*P[prev_index](0,1)*P[prev_index](2,3)+ 2*P[prev_index](0,3)*P[prev_index](1,2)+ 
                     P[prev_index](0,2)*P[prev_index](0,2)+ P[prev_index](1,3)*P[prev_index](1,3);

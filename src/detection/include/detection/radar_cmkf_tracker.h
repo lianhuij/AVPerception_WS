@@ -38,6 +38,8 @@ private:
     matrix6d init_P;
     matrix6d F;
     matrix6d Q;
+    matrix2_6d Hp;
+    matrix3d R;
 
     std::vector<std::pair<int, int> > matched_pair;
     std::vector<bool> prev_matched;

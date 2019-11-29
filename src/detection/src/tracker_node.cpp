@@ -24,7 +24,7 @@ int main(int argc,char** argv)
 
     ros::Subscriber radar_sub  = nh.subscribe("radar_rawArray", 10, &RadarCMKFTracker::CMKF, radar_tracker_ptr);
     ros::Subscriber camera_sub = nh.subscribe("cam_rawArray", 10, &CameraTracker::KF, cam_tracker_ptr);
-    radar_filtered_pub = nh.advertise<visualization_msgs::MarkerArray>("radar_filtered", 10);
+    radar_cmkf_pub = nh.advertise<visualization_msgs::MarkerArray>("radar_filtered", 10);
     cam_filtered_pub   = nh.advertise<visualization_msgs::MarkerArray>("cam_filtered", 10);
     
     ros::spin();
