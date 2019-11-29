@@ -40,7 +40,7 @@ RadarTracker::~RadarTracker() { }
 
 void RadarTracker::EKF(const raw_data::RadarRawArray& input)
 {
-    clock_t start = clock();
+    // clock_t start = clock();
     std::vector<Point> vec_pts;
     for (int i=0; i<input.num; ++i){
         vec_pts.push_back({input.data[i].x, input.data[i].y, 0, NOT_CLASSIFIED});
@@ -83,9 +83,9 @@ void RadarTracker::EKF(const raw_data::RadarRawArray& input)
       MatchGNN(src);
       Update(src);
     }
-    clock_t end = clock();
-    float duration_ms = (float)(end-start)*1000/(float)CLOCKS_PER_SEC;  //程序用时 ms
-    std::cout << "duration(ms) = " << duration_ms << std::endl;
+    // clock_t end = clock();
+    // float duration_ms = (float)(end-start)*1000/(float)CLOCKS_PER_SEC;  //程序用时 ms
+    // std::cout << "duration(ms) = " << duration_ms << std::endl;
     PubRadarTracks();
 }
 
@@ -341,9 +341,9 @@ void RadarTracker::PubRadarTracks()
         bbox_marker.pose.position.x = 0;
         bbox_marker.pose.position.y = 0;
         bbox_marker.pose.position.z = 0;
-        bbox_marker.scale.x = 0;
-        bbox_marker.scale.y = 0;
-        bbox_marker.scale.z = 0;
+        bbox_marker.scale.x = 0.1;
+        bbox_marker.scale.y = 0.1;
+        bbox_marker.scale.z = 0.1;
         marker_array.markers.push_back(bbox_marker);
     }
     radar_filtered_pub.publish(marker_array);
