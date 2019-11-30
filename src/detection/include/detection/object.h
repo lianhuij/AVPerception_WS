@@ -20,9 +20,10 @@ typedef typename Eigen::Matrix<double,2,6> matrix2_6d;
 typedef typename Eigen::Matrix<double,6,2> matrix6_2d;
 typedef typename Eigen::Matrix<double,3,6> matrix3_6d;
 typedef typename Eigen::Matrix<double,6,3> matrix6_3d;
+typedef typename Eigen::MatrixXd matrixXd;
 
-const float ped_width  = 0.6;
-const float ped_height = 1.7;
+const float PED_WIDTH  = 0.6;
+const float PED_HEIGHT = 1.7;
 
 struct Object
 {

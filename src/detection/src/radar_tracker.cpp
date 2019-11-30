@@ -4,8 +4,8 @@
 #include "detection/radar_tracker.h"
 
 extern ros::Publisher radar_ekf_pub;
-extern std::string fixed_frame;
-extern float x_offset;
+extern std::string FIXED_FRAME;
+extern float X_OFFSET;
 
 RadarTracker::RadarTracker()
 {
@@ -45,9 +45,7 @@ void RadarTracker::EKF(const raw_data::RadarRawArray& input)
     for (int i=0; i<input.num; ++i){
         vec_pts.push_back({input.data[i].x, input.data[i].y, 0, NOT_CLASSIFIED});
     }
-    double eps = radar_cluster_eps;
-    int min_pts = radar_cluster_minPts;
-    DBSCAN dbScan(eps, min_pts, vec_pts);    //原始目标聚类
+    DBSCAN dbScan(RADAR_CLUSTER_EPS, RADAR_CLUSTER_MINPTS, vec_pts);    //原始目标聚类
     dbScan.run();
     std::vector<std::vector<int> > idx = dbScan.getCluster();
 
@@ -127,8 +125,8 @@ void RadarTracker::MatchGNN(const std::vector<RadarObject>& src)
     prev_matched.clear();
     prev_matched.resize(prev_track_num, false);
 
-    Eigen::MatrixXd w_ij(src_obj_num, prev_track_num + src_obj_num);
-    w_ij = Eigen::MatrixXd::Zero(src_obj_num, prev_track_num + src_obj_num);
+    matrixXd w_ij(src_obj_num, prev_track_num + src_obj_num);
+    w_ij = matrixXd::Zero(src_obj_num, prev_track_num + src_obj_num);
 
     // get likelihoods of measurements within track pdfs
     for ( int i = 0; i < src_obj_num; ++i )
@@ -148,7 +146,7 @@ void RadarTracker::MatchGNN(const std::vector<RadarObject>& src)
             float theta_ = atan2(ry, rx);
             float vt_ = (vx * rx + vy * ry) / r_2;
 
-            if (fabs(r - r_2) < r_gate && fabs(theta - theta_) < theta_gate && fabs(vt - vt_) < vt_gate) // track gate
+            if (fabs(r - r_2) < R_GATE && fabs(theta - theta_) < THETA_GATE && fabs(vt - vt_) < VT_GATE) // track gate
             {
                 vector3d z_(r_2, theta_, vt_);
                 matrix3_6d H = matrix3_6d::Zero(3,6);
@@ -170,7 +168,7 @@ void RadarTracker::MatchGNN(const std::vector<RadarObject>& src)
 
     // weights for initializing new filters
     for ( int j = prev_track_num; j < prev_track_num + src_obj_num; ++j ){
-        w_ij(j - prev_track_num, j) = radar_newobj_weight;
+        w_ij(j - prev_track_num, j) = RADAR_NEWOBJ_WEIGHT;
     }
 
     // solve the maximum-sum-of-weights problem (i.e. assignment problem)
@@ -192,7 +190,7 @@ void RadarTracker::MatchGNN(const std::vector<RadarObject>& src)
             track_info[e.y].confi_dec = 0;    // target matched, confidence increase
             track_info[e.y].confi_inc++;
             track_info[e.y].confidence += log(track_info[e.y].confi_inc + 1) / log(1.5f);
-            if (track_info[e.y].confidence > radar_max_confidence) track_info[e.y].confidence = radar_max_confidence;
+            if (track_info[e.y].confidence > RADAR_MAX_CONFIDENCE) track_info[e.y].confidence = RADAR_MAX_CONFIDENCE;
         }
         else // is this assignment a measurement that is considered new?
         {
@@ -301,7 +299,7 @@ void RadarTracker::PubRadarTracks()
     static int max_marker_size_ = 0;
     visualization_msgs::MarkerArray marker_array;
     visualization_msgs::Marker bbox_marker;
-    bbox_marker.header.frame_id = fixed_frame;
+    bbox_marker.header.frame_id = FIXED_FRAME;
     bbox_marker.header.stamp = time_stamp;
     bbox_marker.color.r = 1.0f;    //radar color red
     bbox_marker.color.g = 0.0f;
@@ -316,16 +314,16 @@ void RadarTracker::PubRadarTracks()
     int track_num = X.size();
     for (int i=0; i<track_num; ++i)
     {
-        if(track_info[i].confidence < radar_min_confidence) continue;
+        if(track_info[i].confidence < RADAR_MIN_CONFIDENCE) continue;
         if (!IsConverged(i))  continue;
 
         bbox_marker.id = marker_id++;
-        bbox_marker.pose.position.x = X[i](0) + x_offset;   // add offset, convert to velodyne frame
+        bbox_marker.pose.position.x = X[i](0) + X_OFFSET;   // add offset, convert to velodyne frame
         bbox_marker.pose.position.y = X[i](1);
         bbox_marker.pose.position.z = -0.9;
-        bbox_marker.scale.x = ped_width;
-        bbox_marker.scale.y = ped_width;
-        bbox_marker.scale.z = ped_height;
+        bbox_marker.scale.x = PED_WIDTH;
+        bbox_marker.scale.y = PED_WIDTH;
+        bbox_marker.scale.z = PED_HEIGHT;
         marker_array.markers.push_back(bbox_marker);
     }
 

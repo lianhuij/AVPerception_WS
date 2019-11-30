@@ -7,15 +7,15 @@
 #include "detection/lidar_tracker.h"
 
 ros::Publisher radar_ekf_pub, radar_cmkf_pub, camera_kf_pub, lidar_kf_pub;  // ROS Publisher
-std::string fixed_frame;
-float x_offset;
+std::string FIXED_FRAME;
+float X_OFFSET;
 
 int main(int argc,char** argv)
 {
     ros::init(argc,argv,"tracker_node");
     ros::NodeHandle nh;
-    nh.getParam("/tracker_node/fixed_frame", fixed_frame);
-    nh.getParam("/tracker_node/x_offset", x_offset);
+    nh.getParam("/tracker_node/fixed_frame", FIXED_FRAME);
+    nh.getParam("/tracker_node/x_offset", X_OFFSET);
     // RadarTracker radar_tracker;
     // RadarTracker* radar_tracker_ptr = &radar_tracker;
     RadarCMKFTracker radar_tracker;

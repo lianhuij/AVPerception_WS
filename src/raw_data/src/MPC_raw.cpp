@@ -48,24 +48,24 @@ void MPCDataHandler::canHandler(const can_msgs::Frame& input)
     if(!radar_head && input.id >= 0x551 && input.id <= 0x55F)
     {
         raw_data::RadarRaw radar_pos;
-        radar_pos.distance = (float)(input.data[0]*256 + input.data[1])/10;
+        radar_pos.distance = (float)(input.data[0]*256 + input.data[1])/10.0;
         radar_pos.angle = (float)(input.data[2]*256 + input.data[3]);
         if(radar_pos.angle < 0x8000)
         {
-            radar_pos.angle = radar_pos.angle / 10;
+            radar_pos.angle = radar_pos.angle / 10.0;
         }
         else
         {
-            radar_pos.angle = (radar_pos.angle - 0x10000)/10;
+            radar_pos.angle = (radar_pos.angle - 0x10000)/10.0;
         }
         radar_pos.speed = (float)(input.data[4]*256 + input.data[5]);
         if(radar_pos.speed < 0x8000)
         {
-            radar_pos.speed = radar_pos.speed / 100;
+            radar_pos.speed = radar_pos.speed / 100.0;
         }
         else
         {
-            radar_pos.speed = (radar_pos.speed - 0x10000)/100;
+            radar_pos.speed = (radar_pos.speed - 0x10000)/100.0;
         }
         radar_pos.x = radar_pos.distance*cos(radar_pos.angle*M_PI/180) + x_offset;
         radar_pos.y = radar_pos.distance*sin(radar_pos.angle*M_PI/180);
@@ -94,24 +94,24 @@ void MPCDataHandler::canHandler(const can_msgs::Frame& input)
     if(!cam_head && input.id >= 0x571 && input.id <= 0x57F)
     {
         raw_data::CameraRaw cam_pos;
-        cam_pos.x = (float)(input.data[0]*256 + input.data[1])/16 + x_offset + 3.5;  //camera纵向距离补偿
+        cam_pos.x = (float)(input.data[0]*256 + input.data[1])/16.0 + x_offset + 3.5;  //camera纵向距离补偿
         cam_pos.y = (float)(input.data[2]*256 + input.data[3]);
         if(cam_pos.y < 0x8000)
         {
-            cam_pos.y = cam_pos.y / 16;
+            cam_pos.y = cam_pos.y / 16.0;
         }
         else
         {
-            cam_pos.y = (cam_pos.y - 0x10000)/16;
+            cam_pos.y = (cam_pos.y - 0x10000)/16.0;
         }
         cam_pos.vx = (float)(input.data[4]*256 + input.data[5]);
         if(cam_pos.vx < 0x8000)
         {
-            cam_pos.vx = cam_pos.vx / 16;
+            cam_pos.vx = cam_pos.vx / 16.0;
         }
         else
         {
-            cam_pos.vx = (cam_pos.vx - 0x10000)/16;
+            cam_pos.vx = (cam_pos.vx - 0x10000)/16.0;
         }
         cam_pos.ID = input.data[6];
         cam_pos.target_type = input.data[7];

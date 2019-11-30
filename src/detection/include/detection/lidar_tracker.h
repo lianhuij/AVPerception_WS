@@ -6,11 +6,11 @@
 #include "detection/object.h"
 #include "detection/GNN.h"
 
-const int lidar_min_confidence   = 7;
-const int lidar_max_confidence   = 100;
-const float lidar_newobj_weight  = 0.01;
-const float lidar_rx_gate  = 0.8;   // rx 0.8m, ry 0.8m
-const float lidar_ry_gate  = 0.8;
+const int LIDAR_MIN_CONFIDENCE   = 7;
+const int LIDAR_MAX_CONFIDENCE   = 100;
+const float LIDAR_NEWOBJ_WEIGHT  = 0.01;
+const float LIDAR_RX_GATE  = 0.8;   // rx 0.8m, ry 0.8m
+const float LIDAR_RY_GATE  = 0.8;
 
 class LidarTracker
 {

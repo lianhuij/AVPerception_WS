@@ -4,7 +4,7 @@
 #include "detection/lidar_tracker.h"
 
 extern ros::Publisher lidar_kf_pub;
-extern std::string fixed_frame;
+extern std::string FIXED_FRAME;
 
 LidarTracker::LidarTracker()
 {
@@ -110,8 +110,8 @@ void LidarTracker::MatchGNN(const std::vector<LidarObject>& src)
     prev_matched.clear();
     prev_matched.resize(prev_track_num, false);
 
-    Eigen::MatrixXd w_ij(src_obj_num, prev_track_num + src_obj_num);
-    w_ij = Eigen::MatrixXd::Zero(src_obj_num, prev_track_num + src_obj_num);
+    matrixXd w_ij(src_obj_num, prev_track_num + src_obj_num);
+    w_ij = matrixXd::Zero(src_obj_num, prev_track_num + src_obj_num);
 
     // get likelihoods of measurements within track pdfs
     for ( int i = 0; i < src_obj_num; ++i )
@@ -122,7 +122,7 @@ void LidarTracker::MatchGNN(const std::vector<LidarObject>& src)
         for ( int j = 0; j < prev_track_num; ++j ){
             float rx_ = X[j](0);
             float ry_ = X[j](1);
-            if (fabs(rx - rx_) < lidar_rx_gate && fabs(ry - ry_) < lidar_ry_gate) // track gate
+            if (fabs(rx - rx_) < LIDAR_RX_GATE && fabs(ry - ry_) < LIDAR_RY_GATE) // track gate
             {
                 vector2d z_(rx_, ry_);
                 matrix2d S = H * P[j] * H.transpose() + R;
@@ -136,7 +136,7 @@ void LidarTracker::MatchGNN(const std::vector<LidarObject>& src)
 
     // weights for initializing new filters
     for ( int j = prev_track_num; j < prev_track_num + src_obj_num; ++j ){
-        w_ij(j - prev_track_num, j) = lidar_newobj_weight;
+        w_ij(j - prev_track_num, j) = LIDAR_NEWOBJ_WEIGHT;
     }
 
     // solve the maximum-sum-of-weights problem (i.e. assignment problem)
@@ -158,7 +158,7 @@ void LidarTracker::MatchGNN(const std::vector<LidarObject>& src)
             track_info[e.y].confi_dec = 0;    // target matched, confidence increase
             track_info[e.y].confi_inc++;
             track_info[e.y].confidence += log(track_info[e.y].confi_inc + 1) / log(1.5f);
-            if (track_info[e.y].confidence > lidar_max_confidence) track_info[e.y].confidence = lidar_max_confidence;
+            if (track_info[e.y].confidence > LIDAR_MAX_CONFIDENCE) track_info[e.y].confidence = LIDAR_MAX_CONFIDENCE;
         }
         else // is this assignment a measurement that is considered new?
         {
@@ -249,7 +249,7 @@ void LidarTracker::PubLidarTracks()
     static int max_marker_size_ = 0;
     visualization_msgs::MarkerArray marker_array;
     visualization_msgs::Marker bbox_marker;
-    bbox_marker.header.frame_id = fixed_frame;
+    bbox_marker.header.frame_id = FIXED_FRAME;
     bbox_marker.header.stamp = time_stamp;
     bbox_marker.color.r = 0.0f;
     bbox_marker.color.g = 1.0f;    //lidar color green
@@ -264,16 +264,16 @@ void LidarTracker::PubLidarTracks()
     int track_num = X.size();
     for (int i=0; i<track_num; ++i)
     {
-        if(track_info[i].confidence < lidar_min_confidence) continue;
+        if(track_info[i].confidence < LIDAR_MIN_CONFIDENCE) continue;
         if (!IsConverged(i))  continue;
 
         bbox_marker.id = marker_id++;
         bbox_marker.pose.position.x = X[i](0);
         bbox_marker.pose.position.y = X[i](1);
         bbox_marker.pose.position.z = -0.9;
-        bbox_marker.scale.x = ped_width;
-        bbox_marker.scale.y = ped_width;
-        bbox_marker.scale.z = ped_height;
+        bbox_marker.scale.x = PED_WIDTH;
+        bbox_marker.scale.y = PED_WIDTH;
+        bbox_marker.scale.z = PED_HEIGHT;
         marker_array.markers.push_back(bbox_marker);
     }
 

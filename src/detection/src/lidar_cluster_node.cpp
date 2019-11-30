@@ -149,9 +149,9 @@ void LidarClusterHandler::PublidarPed(const detection::LidarRawArray& raw_array)
         bbox_marker.pose.position.x = raw_array.data[i].x;
         bbox_marker.pose.position.y = raw_array.data[i].y;
         bbox_marker.pose.position.z = -0.9;
-        bbox_marker.scale.x = ped_width;
-        bbox_marker.scale.y = ped_width;
-        bbox_marker.scale.z = ped_height;
+        bbox_marker.scale.x = PED_WIDTH;
+        bbox_marker.scale.y = PED_WIDTH;
+        bbox_marker.scale.z = PED_HEIGHT;
         marker_array.markers.push_back(bbox_marker);
     }
 
