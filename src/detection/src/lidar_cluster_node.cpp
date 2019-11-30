@@ -11,6 +11,8 @@
 #include <pcl/common/common.h>
 #include <visualization_msgs/Marker.h>
 #include <visualization_msgs/MarkerArray.h>
+#include <detection/LidarRaw.h>
+#include <detection/LidarRawArray.h>
 #include "detection/dbscan.h"
 #include <cmath>
 #include <time.h>
@@ -23,7 +25,8 @@ protected:
     ros::NodeHandle nh;
     ros::Subscriber pc_sub;
     ros::Publisher pc_pub;
-    ros::Publisher lidar_clustered_pub;
+    ros::Publisher lidar_rviz_pub;
+    ros::Publisher lidar_rawArray_pub;
     // ros::Publisher time_pub;
     std::string fixed_frame;
     float ROI_width;
@@ -33,15 +36,16 @@ public:
     {
         pc_sub   = nh.subscribe("cali_pc", 1, &LidarClusterHandler::cluster, this);  //接收话题：cali_pc
         pc_pub   = nh.advertise<sensor_msgs::PointCloud2>("no_ground_pc", 1);        //发布话题：no_ground_pc
-        lidar_clustered_pub = nh.advertise<visualization_msgs::MarkerArray>("lidar_clustered", 10);
+        lidar_rviz_pub = nh.advertise<visualization_msgs::MarkerArray>("lidar_raw_rviz", 10);
+        lidar_rawArray_pub = nh.advertise<detection::LidarRawArray>("lidar_rawArray", 10);
         // time_pub = nh.advertise<std_msgs::Float32>("lidar_cluster_time", 1);         //发布话题：lidar_cluster_time
 
         nh.getParam("/lidar_cluster_node/fixed_frame", fixed_frame);
         nh.getParam("/lidar_cluster_node/ROI_width", ROI_width);
     }
-
+    ~LidarClusterHandler(){ }
     void cluster(const sensor_msgs::PointCloud2ConstPtr& input);
-    void PublidarPed(const std::vector<LidarObject>& src, const ros::Time& stamp);
+    void PublidarPed(const detection::LidarRawArray& raw_array);
 };
 
 void LidarClusterHandler::cluster(const sensor_msgs::PointCloud2ConstPtr& input)
@@ -98,32 +102,36 @@ void LidarClusterHandler::cluster(const sensor_msgs::PointCloud2ConstPtr& input)
     DBSCAN dbScan(eps, min_pts, vec_pts);    //原始目标聚类
     dbScan.run();
     std::vector<std::vector<int> > idx = dbScan.getCluster();
-    std::vector<LidarObject> src;
-    LidarObject raw;
+    detection::LidarRawArray raw_array;
+    detection::LidarRaw raw;
     for(int i=0; i<idx.size(); ++i){
-        raw.rx = raw.ry = 0;
+        raw.x = raw.y = 0;
         int size = idx[i].size();
         for(int j=0; j<size; ++j){
-            raw.rx += cloud_obstacle_ptr->points[idx[i][j]].x;
-            raw.ry += cloud_obstacle_ptr->points[idx[i][j]].y;
+            raw.x += cloud_obstacle_ptr->points[idx[i][j]].x;
+            raw.y += cloud_obstacle_ptr->points[idx[i][j]].y;
         }
-        raw.rx /= size;
-        raw.ry /= size;
-        src.push_back(raw);
+        raw.x /= size;
+        raw.y /= size;
+        if(i >= 15) ROS_ERROR("lidar raw num > 15");
+        raw_array.data[i] = raw;
+        raw_array.num = i+1;
     }
-    PublidarPed(src, input->header.stamp);
+    raw_array.header.stamp = input->header.stamp;
+    lidar_rawArray_pub.publish(raw_array);
+    PublidarPed(raw_array);
     // clock_t end = clock();
     // std_msgs::Float32 time;
     // time.data = (float)(end-start)*1000/(float)CLOCKS_PER_SEC;  //程序用时 ms
     // time_pub.publish(time);   //发布程序耗时
 }
 
-void LidarClusterHandler::PublidarPed(const std::vector<LidarObject>& src, const ros::Time& stamp){
+void LidarClusterHandler::PublidarPed(const detection::LidarRawArray& raw_array){
     static int max_marker_size_ = 0;
     visualization_msgs::MarkerArray marker_array;
     visualization_msgs::Marker bbox_marker;
     bbox_marker.header.frame_id = fixed_frame;
-    bbox_marker.header.stamp = stamp;
+    bbox_marker.header.stamp = raw_array.header.stamp;
     bbox_marker.color.r = 0.0f;
     bbox_marker.color.g = 1.0f;    //lidar color green
     bbox_marker.color.b = 0.0f;
@@ -134,12 +142,12 @@ void LidarClusterHandler::PublidarPed(const std::vector<LidarObject>& src, const
     bbox_marker.action = visualization_msgs::Marker::ADD;
 
     int marker_id = 0;
-    int track_num = src.size();
+    int track_num = raw_array.num;
     for (int i=0; i<track_num; ++i)
     {
         bbox_marker.id = marker_id++;
-        bbox_marker.pose.position.x = src[i].rx;
-        bbox_marker.pose.position.y = src[i].ry;
+        bbox_marker.pose.position.x = raw_array.data[i].x;
+        bbox_marker.pose.position.y = raw_array.data[i].y;
         bbox_marker.pose.position.z = -0.9;
         bbox_marker.scale.x = ped_width;
         bbox_marker.scale.y = ped_width;
@@ -164,7 +172,7 @@ void LidarClusterHandler::PublidarPed(const std::vector<LidarObject>& src, const
         bbox_marker.scale.z = 0.1;
         marker_array.markers.push_back(bbox_marker);
     }
-    lidar_clustered_pub.publish(marker_array);
+    lidar_rviz_pub.publish(marker_array);
 }
 
 ////////////////////////////////////////////主函数///////////////////////////////////////////////////

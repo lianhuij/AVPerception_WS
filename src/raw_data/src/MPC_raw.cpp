@@ -13,9 +13,9 @@
 MPCDataHandler::MPCDataHandler(){
     can_sub = nh.subscribe("received_messages", 20, &MPCDataHandler::canHandler, this);    //接收话题：received_messages
     radar_raw_pub = nh.advertise<visualization_msgs::MarkerArray>("radar_raw_rviz", 10);   //发布话题：radar_raw_rviz
-    cam_raw_pub = nh.advertise<visualization_msgs::MarkerArray>("cam_raw_rviz", 10);       //发布话题：cam_raw_rviz
+    cam_raw_pub = nh.advertise<visualization_msgs::MarkerArray>("camera_raw_rviz", 10);    //发布话题：camera_raw_rviz
     radar_rawArray_pub = nh.advertise<raw_data::RadarRawArray>("radar_rawArray", 10);      //发布话题：radar_rawArray
-    cam_rawArray_pub = nh.advertise<raw_data::CameraRawArray>("cam_rawArray", 10);         //发布话题：cam_rawArray
+    cam_rawArray_pub = nh.advertise<raw_data::CameraRawArray>("camera_rawArray", 10);      //发布话题：camera_rawArray
     nh.getParam("/MPC_raw_node/fixed_frame", fixed_frame);
     nh.getParam("/MPC_raw_node/x_offset", x_offset);
 }

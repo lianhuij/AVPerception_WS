@@ -43,11 +43,10 @@ find_package(catkin REQUIRED COMPONENTS roscpp std_msgs message_generation senso
 ##   * add every package in MSG_DEP_SET to generate_messages(DEPENDENCIES ...)
 
 ## Generate messages in the 'msg' folder
-# add_message_files(
-#   FILES
-#   Message1.msg
-#   Message2.msg
-# )
+add_message_files(FILES
+  LidarRawArray.msg
+  LidarRaw.msg
+)
 
 ## Generate services in the 'srv' folder
 # add_service_files(
@@ -64,10 +63,9 @@ find_package(catkin REQUIRED COMPONENTS roscpp std_msgs message_generation senso
 # )
 
 ## Generate added messages and services with any dependencies listed here
-# generate_messages(
-#   DEPENDENCIES
-#   std_msgs  # Or other packages containing msgs
-# )
+generate_messages(DEPENDENCIES
+  std_msgs
+)
 
 ################################################
 ## Declare ROS dynamic reconfigure parameters ##
@@ -99,6 +97,8 @@ find_package(catkin REQUIRED COMPONENTS roscpp std_msgs message_generation senso
 ## CATKIN_DEPENDS: catkin_packages dependent projects also need
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
+  CATKIN_DEPENDS
+  message_runtime
 #  INCLUDE_DIRS include
 #  LIBRARIES detection
 #  CATKIN_DEPENDS other_catkin_pkg
@@ -196,6 +196,8 @@ include_directories(
 # catkin_add_nosetests(test)
 
 add_executable(tracker_node
+  include/detection/lidar_tracker.h
+  src/lidar_tracker.cpp
   src/radar_cmkf_tracker.cpp
   include/detection/radar_cmkf_tracker.h
   include/detection/camera_tracker.h

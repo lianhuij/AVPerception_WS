@@ -57,12 +57,12 @@ void RadarCMKFTracker::CMKF(const raw_data::RadarRawArray& input)
     RadarObject raw;
     for(int i=0; i<idx.size(); ++i){
         raw.r = raw.theta = raw.vt = 0;
-        for(int j=0; j<idx[i].size(); ++j){
+        int size = idx[i].size();
+        for(int j=0; j<size; ++j){
             raw.r     = raw.r + input.data[idx[i][j]].distance;
             raw.theta = raw.theta + input.data[idx[i][j]].angle *M_PI/180;
             raw.vt    = raw.vt + input.data[idx[i][j]].speed;
         }
-        int size = idx[i].size();
         raw.r     /= size;
         raw.theta /= size;
         raw.vt    /= size;

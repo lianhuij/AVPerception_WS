@@ -1,12 +1,12 @@
 #include <ros/ros.h>
 #include <visualization_msgs/Marker.h>
 #include <visualization_msgs/MarkerArray.h>
-#include "detection/camera_tracker.h"
+#include "detection/lidar_tracker.h"
 
-extern ros::Publisher camera_kf_pub;
+extern ros::Publisher lidar_kf_pub;
 extern std::string fixed_frame;
 
-CameraTracker::CameraTracker()
+LidarTracker::LidarTracker()
 {
     matched_pair.clear();
     prev_matched.clear();
@@ -15,7 +15,7 @@ CameraTracker::CameraTracker()
     X.clear();
     P.clear();
     
-    ts = 0.08;
+    ts = 0.1;
     time_stamp = ros::Time::now();
     init_P = matrix6d::Zero(6,6);
     init_P(0,0) = 1;    init_P(1,1) = 1;
@@ -26,28 +26,27 @@ CameraTracker::CameraTracker()
     F(2,2) = 1;         F(3,3) = 1;
     F(4,4) = 1;         F(5,5) = 1;
     Q = matrix6d::Zero(6,6);
-    Q(0,0) = 0.1;       Q(1,1) = 0.1;
-    Q(2,2) = 0.5;       Q(3,3) = 0.5;
-    Q(4,4) = 0.9;       Q(5,5) = 0.9;
+    Q(0,0) = 0.001;     Q(1,1) = 0.001;
+    Q(2,2) = 0.05;      Q(3,3) = 0.05;
+    Q(4,4) = 0.1;       Q(5,5) = 0.1;
     H = matrix2_6d::Zero(2,6);
     H(0,0) = 1;
     H(1,1) = 1;
     R = matrix2d::Zero(2,2);
-    R(0,0) = 4;       // 2^2
-    R(1,1) = 1;       // 1^2
+    R(0,0) = 0.0225;       // 0.15^2
+    R(1,1) = 0.0225;       // 0.15^2
 }
 
-CameraTracker::~CameraTracker() { }
+LidarTracker::~LidarTracker() { }
 
-void CameraTracker::KF(const raw_data::CameraRawArray& input)
+void LidarTracker::KF(const detection::LidarRawArray& input)
 {
     // clock_t start = clock();
-    std::vector<CameraObject> src;
-    CameraObject raw;
+    std::vector<LidarObject> src;
+    LidarObject raw;
     for(int i=0; i<input.num; ++i){
         raw.rx = input.data[i].x;
         raw.ry = input.data[i].y;
-        raw.target_type = input.data[i].target_type;
         src.push_back(raw);
     }
 
@@ -70,10 +69,10 @@ void CameraTracker::KF(const raw_data::CameraRawArray& input)
     // clock_t end = clock();
     // float duration_ms = (float)(end-start)*1000/(float)CLOCKS_PER_SEC;  //程序用时 ms
     // std::cout << "duration(ms) = " << duration_ms << std::endl;
-    PubCameraTracks();
+    PubLidarTracks();
 }
 
-void CameraTracker::InitTrack(const CameraObject &obj)
+void LidarTracker::InitTrack(const LidarObject &obj)
 {
     vector6d init_X = vector6d::Zero(6);
     init_X(0) = obj.rx;
@@ -85,10 +84,10 @@ void CameraTracker::InitTrack(const CameraObject &obj)
     track_info.push_back(init_info);
 }
 
-void CameraTracker::Predict()
+void LidarTracker::Predict()
 {
     if(X.size() != P.size()){
-      ROS_ERROR("camera tracker error: Predict state size not equal");
+      ROS_ERROR("lidar tracker error: Predict state size not equal");
     }
     int prev_track_num = X.size();
     for (int i=0; i<prev_track_num; ++i)
@@ -100,7 +99,7 @@ void CameraTracker::Predict()
     }
 }
 
-void CameraTracker::MatchGNN(const std::vector<CameraObject>& src)
+void LidarTracker::MatchGNN(const std::vector<LidarObject>& src)
 {
     int prev_track_num = X.size();
     int src_obj_num = src.size();
@@ -123,8 +122,7 @@ void CameraTracker::MatchGNN(const std::vector<CameraObject>& src)
         for ( int j = 0; j < prev_track_num; ++j ){
             float rx_ = X[j](0);
             float ry_ = X[j](1);
-
-            if (fabs(rx - rx_) < cam_rx_gate && fabs(ry - ry_) < cam_ry_gate) // track gate
+            if (fabs(rx - rx_) < lidar_rx_gate && fabs(ry - ry_) < lidar_ry_gate) // track gate
             {
                 vector2d z_(rx_, ry_);
                 matrix2d S = H * P[j] * H.transpose() + R;
@@ -138,7 +136,7 @@ void CameraTracker::MatchGNN(const std::vector<CameraObject>& src)
 
     // weights for initializing new filters
     for ( int j = prev_track_num; j < prev_track_num + src_obj_num; ++j ){
-        w_ij(j - prev_track_num, j) = cam_newobj_weight;
+        w_ij(j - prev_track_num, j) = lidar_newobj_weight;
     }
 
     // solve the maximum-sum-of-weights problem (i.e. assignment problem)
@@ -160,7 +158,7 @@ void CameraTracker::MatchGNN(const std::vector<CameraObject>& src)
             track_info[e.y].confi_dec = 0;    // target matched, confidence increase
             track_info[e.y].confi_inc++;
             track_info[e.y].confidence += log(track_info[e.y].confi_inc + 1) / log(1.5f);
-            if (track_info[e.y].confidence > cam_max_confidence) track_info[e.y].confidence = cam_max_confidence;
+            if (track_info[e.y].confidence > lidar_max_confidence) track_info[e.y].confidence = lidar_max_confidence;
         }
         else // is this assignment a measurement that is considered new?
         {
@@ -185,10 +183,10 @@ void CameraTracker::MatchGNN(const std::vector<CameraObject>& src)
     }
 }
 
-void CameraTracker::Update(const std::vector<CameraObject>& src)
+void LidarTracker::Update(const std::vector<LidarObject>& src)
 {
     if(X.size() != P.size()){
-      ROS_ERROR("camera tracker error: Update state size not equal");
+      ROS_ERROR("lidar tracker error: Update state size not equal");
     }
     
     for (int i=0; i<matched_pair.size(); ++i)    // upgrade matched
@@ -216,20 +214,20 @@ template <class T>
 static void erase_from_vector(std::vector<T> &v, int index)
 {
     if(index >= v.size()){
-      ROS_ERROR("camera tracker error: remove track index >= size");
+      ROS_ERROR("lidar tracker error: remove track index >= size");
       return;
     }
     v.erase(v.begin() + index);
 }
 
-void CameraTracker::RemoveTrack(int index)
+void LidarTracker::RemoveTrack(int index)
 {
     erase_from_vector(X, index);
     erase_from_vector(P, index);
     erase_from_vector(track_info, index);
 }
 
-bool CameraTracker::IsConverged(int track_index)
+bool LidarTracker::IsConverged(int track_index)
 {
     bool converged = false;
     float rx_cov = P[track_index](0,0);
@@ -246,7 +244,7 @@ bool CameraTracker::IsConverged(int track_index)
     return converged;
 }
 
-void CameraTracker::PubCameraTracks()
+void LidarTracker::PubLidarTracks()
 {
     static int max_marker_size_ = 0;
     visualization_msgs::MarkerArray marker_array;
@@ -254,8 +252,8 @@ void CameraTracker::PubCameraTracks()
     bbox_marker.header.frame_id = fixed_frame;
     bbox_marker.header.stamp = time_stamp;
     bbox_marker.color.r = 0.0f;
-    bbox_marker.color.g = 0.0f;
-    bbox_marker.color.b = 1.0f;    //camera color blue
+    bbox_marker.color.g = 1.0f;    //lidar color green
+    bbox_marker.color.b = 0.0f;
     bbox_marker.color.a = 0.5;
     bbox_marker.lifetime = ros::Duration();
     bbox_marker.frame_locked = true;
@@ -266,7 +264,7 @@ void CameraTracker::PubCameraTracks()
     int track_num = X.size();
     for (int i=0; i<track_num; ++i)
     {
-        if(track_info[i].confidence < cam_min_confidence) continue;
+        if(track_info[i].confidence < lidar_min_confidence) continue;
         if (!IsConverged(i))  continue;
 
         bbox_marker.id = marker_id++;
@@ -296,5 +294,5 @@ void CameraTracker::PubCameraTracks()
         bbox_marker.scale.z = 0.1;
         marker_array.markers.push_back(bbox_marker);
     }
-    camera_kf_pub.publish(marker_array);
+    lidar_kf_pub.publish(marker_array);
 }

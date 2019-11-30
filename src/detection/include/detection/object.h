@@ -62,6 +62,7 @@ struct LidarObject : Object
 {
     float rx;
     float ry;
+    float width;
 };
 
 struct TrackCount

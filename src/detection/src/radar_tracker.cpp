@@ -3,7 +3,7 @@
 #include <visualization_msgs/MarkerArray.h>
 #include "detection/radar_tracker.h"
 
-extern ros::Publisher radar_filtered_pub;
+extern ros::Publisher radar_ekf_pub;
 extern std::string fixed_frame;
 extern float x_offset;
 
@@ -55,12 +55,12 @@ void RadarTracker::EKF(const raw_data::RadarRawArray& input)
     RadarObject raw;
     for(int i=0; i<idx.size(); ++i){
         raw.r = raw.theta = raw.vt = 0;
-        for(int j=0; j<idx[i].size(); ++j){
+        int size = idx[i].size();
+        for(int j=0; j<size; ++j){
             raw.r     = raw.r + input.data[idx[i][j]].distance;
             raw.theta = raw.theta + input.data[idx[i][j]].angle *M_PI/180;
             raw.vt    = raw.vt + input.data[idx[i][j]].speed;
         }
-        int size = idx[i].size();
         raw.r     /= size;
         raw.theta /= size;
         raw.vt    /= size;
@@ -346,5 +346,5 @@ void RadarTracker::PubRadarTracks()
         bbox_marker.scale.z = 0.1;
         marker_array.markers.push_back(bbox_marker);
     }
-    radar_filtered_pub.publish(marker_array);
+    radar_ekf_pub.publish(marker_array);
 }
