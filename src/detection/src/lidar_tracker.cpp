@@ -47,6 +47,7 @@ void LidarTracker::KF(const detection::LidarRawArray& input)
     for(int i=0; i<input.num; ++i){
         raw.rx = input.data[i].x;
         raw.ry = input.data[i].y;
+        raw.width = input.data[i].width;
         src.push_back(raw);
     }
 
@@ -80,7 +81,7 @@ void LidarTracker::InitTrack(const LidarObject &obj)
     X.push_back(init_X);
     P.push_back(init_P);
 
-    TrackCount init_info({0,0,0});
+    ObjectInfo init_info(UNKNOWN, obj.width);
     track_info.push_back(init_info);
 }
 
@@ -246,7 +247,7 @@ bool LidarTracker::IsConverged(int track_index)
 
 void LidarTracker::PubLidarTracks()
 {
-    static int max_marker_size_ = 0;
+    static int pre_marker_size_ = 0;
     visualization_msgs::MarkerArray marker_array;
     visualization_msgs::Marker bbox_marker;
     bbox_marker.header.frame_id = FIXED_FRAME;
@@ -272,27 +273,22 @@ void LidarTracker::PubLidarTracks()
         bbox_marker.pose.position.y = X[i](1);
         bbox_marker.pose.position.z = -0.9;
         bbox_marker.scale.x = PED_WIDTH;
-        bbox_marker.scale.y = PED_WIDTH;
+        bbox_marker.scale.y = track_info[i].width;
         bbox_marker.scale.z = PED_HEIGHT;
         marker_array.markers.push_back(bbox_marker);
     }
 
-    if (marker_array.markers.size() > max_marker_size_)
+    if (marker_array.markers.size() > pre_marker_size_)
     {
-        max_marker_size_ = marker_array.markers.size();
+        pre_marker_size_ = marker_array.markers.size();
     }
 
-    for (int i = marker_id; i < max_marker_size_; ++i)
+    for (int i = marker_id; i < pre_marker_size_; ++i)
     {
         bbox_marker.id = i;
-        bbox_marker.color.a = 0;
-        bbox_marker.pose.position.x = 0;
-        bbox_marker.pose.position.y = 0;
-        bbox_marker.pose.position.z = 0;
-        bbox_marker.scale.x = 0.1;
-        bbox_marker.scale.y = 0.1;
-        bbox_marker.scale.z = 0.1;
+        bbox_marker.action = visualization_msgs::Marker::DELETE;
         marker_array.markers.push_back(bbox_marker);
     }
+    pre_marker_size_ = marker_id;
     lidar_kf_pub.publish(marker_array);
 }

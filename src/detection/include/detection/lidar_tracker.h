@@ -30,7 +30,7 @@ public:
 private:
     std::vector<vector6d> X;  // rx ry vx vy ax ay
     std::vector<matrix6d> P;
-    std::vector<TrackCount> track_info;
+    std::vector<ObjectInfo> track_info;
     matrix6d init_P;
     matrix6d F;
     matrix6d Q;

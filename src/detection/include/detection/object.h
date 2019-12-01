@@ -25,12 +25,14 @@ typedef typename Eigen::MatrixXd matrixXd;
 const float PED_WIDTH  = 0.6;
 const float PED_HEIGHT = 1.7;
 
+typedef enum ObjectType{ VEHICLE, TRUCK, BIKE, PED, BICYCLE, UNKNOWN }ObjectType;
+
 struct Object
 {
-    uint64_t id;
+    int id;
 };
 
-struct BoxObject : Object
+struct ObjectState : Object
 {
     float rx;
     float ry;
@@ -56,7 +58,7 @@ struct CameraObject : Object
 {
     float rx;
     float ry;
-    int target_type;
+    ObjectType type;
 };
 
 struct LidarObject : Object
@@ -66,11 +68,23 @@ struct LidarObject : Object
     float width;
 };
 
-struct TrackCount
+struct ObjectInfo : Object
 {
     int confi_inc;
     int confi_dec;
     int confidence;
+    ObjectType type;
+    float width;
+    ObjectInfo(ObjectType type_, float width_){
+        confi_inc = confi_dec = confidence = 0;
+        type  = type_;
+        width = width_;
+    }
+    ObjectInfo(void){
+        confi_inc = confi_dec = confidence = 0;
+        type  = UNKNOWN;
+        width = 0;
+    }
 };
 
 #endif // DETECTION_OBJECT_H

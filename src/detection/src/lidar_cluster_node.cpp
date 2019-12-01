@@ -8,6 +8,9 @@
 #include <pcl/sample_consensus/model_types.h>
 #include <pcl/segmentation/sac_segmentation.h>
 #include <pcl/filters/extract_indices.h>
+#include <pcl/kdtree/kdtree.h>
+#include <pcl/segmentation/extract_clusters.h>
+#include <pcl/common/centroid.h>
 #include <pcl/common/common.h>
 #include <visualization_msgs/Marker.h>
 #include <visualization_msgs/MarkerArray.h>
@@ -17,6 +20,12 @@
 #include <cmath>
 #include <time.h>
 #include <vector>
+
+// const float LIDAR_EPS  = 0.5;
+// const int LIDAR_MINPTS = 6;
+const float CLUSTER_TOLERANCE = 0.6;
+const int MIN_CLUSTER_SIZE    = 7;
+const int MAX_CLUSTER_SIZE    = 400;
 
 ///////////////////////激光雷达点云目标聚类处理类////////////////////////
 class LidarClusterHandler
@@ -92,31 +101,69 @@ void LidarClusterHandler::cluster(const sensor_msgs::PointCloud2ConstPtr& input)
     pcl_output.header.stamp = input->header.stamp;
     pc_pub.publish(pcl_output);
 
-    //障碍目标点云聚类 DBSCAN
-    std::vector<Point> vec_pts;
-    for (int i=0; i<cloud_obstacle_ptr->size(); ++i){
-        vec_pts.push_back({cloud_obstacle_ptr->points[i].x, cloud_obstacle_ptr->points[i].y, 0, NOT_CLASSIFIED});
-    }
-    double eps = 0.5;
-    int min_pts = 6;
-    DBSCAN dbScan(eps, min_pts, vec_pts);    //原始目标聚类
-    dbScan.run();
-    std::vector<std::vector<int> > idx = dbScan.getCluster();
+    // //障碍目标点云聚类 DBSCAN
+    // std::vector<Point> vec_pts;
+    // for (int i=0; i<cloud_obstacle_ptr->size(); ++i){
+    //     vec_pts.push_back({cloud_obstacle_ptr->points[i].x, cloud_obstacle_ptr->points[i].y, 0, NOT_CLASSIFIED});
+    // }
+    // DBSCAN dbScan(LIDAR_EPS, LIDAR_MINPTS, vec_pts);    //原始目标聚类
+    // dbScan.run();
+    // std::vector<std::vector<int> > idx = dbScan.getCluster();
+    // detection::LidarRawArray raw_array;
+    // detection::LidarRaw raw;
+    // for(int i=0; i<idx.size(); ++i){
+    //     raw.x = raw.y = 0;
+    //     int size = idx[i].size();
+    //     for(int j=0; j<size; ++j){
+    //         raw.x += cloud_obstacle_ptr->points[idx[i][j]].x;
+    //         raw.y += cloud_obstacle_ptr->points[idx[i][j]].y;
+    //     }
+    //     raw.x /= size;
+    //     raw.y /= size;
+    //     if(i >= 15) ROS_ERROR("lidar raw num > 15");
+    //     raw_array.data[i] = raw;
+    //     raw_array.num = i+1;
+    // }
+
+    //障碍目标点云聚类 欧氏聚类
     detection::LidarRawArray raw_array;
-    detection::LidarRaw raw;
-    for(int i=0; i<idx.size(); ++i){
-        raw.x = raw.y = 0;
-        int size = idx[i].size();
-        for(int j=0; j<size; ++j){
-            raw.x += cloud_obstacle_ptr->points[idx[i][j]].x;
-            raw.y += cloud_obstacle_ptr->points[idx[i][j]].y;
+    if(cloud_obstacle_ptr->size() > 0){
+        std::vector<pcl::PointIndices> cluster_indices;
+        // Creating the KdTree object for the search method of the extraction
+        pcl::search::KdTree<pcl::PointXYZ>::Ptr tree (new pcl::search::KdTree<pcl::PointXYZ>);
+        tree->setInputCloud (cloud_obstacle_ptr);
+        // ClusterExtraction
+        pcl::EuclideanClusterExtraction<pcl::PointXYZ> ec;
+        ec.setClusterTolerance (CLUSTER_TOLERANCE);
+        ec.setMinClusterSize (MIN_CLUSTER_SIZE);
+        ec.setMaxClusterSize (MAX_CLUSTER_SIZE);
+        ec.setSearchMethod (tree);
+        ec.setInputCloud (cloud_obstacle_ptr);
+        ec.extract (cluster_indices);
+
+        detection::LidarRaw raw;
+        int mark = 0;
+        for (std::vector<pcl::PointIndices>::const_iterator it = cluster_indices.begin (); it != cluster_indices.end (); ++it) {
+            pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_cluster (new pcl::PointCloud<pcl::PointXYZ>);
+            for (std::vector<int>::const_iterator pit = it->indices.begin (); pit != it->indices.end (); pit++) {
+                cloud_cluster->points.push_back (cloud_obstacle_ptr->points[*pit]);
+            }
+            Eigen::Vector4f centroid;
+            pcl::PointXYZ minpoint, maxpoint;
+            pcl::compute3DCentroid (*cloud_cluster, centroid);
+            pcl::getMinMax3D (*cloud_cluster, minpoint, maxpoint);
+            raw.x = centroid[0];
+            raw.y = centroid[1];
+            raw.width = maxpoint.y - minpoint.y;
+            if(raw.width < 0.5) raw.width = 0.5;
+            if(mark >= 15) ROS_ERROR("lidar raw num > 15");
+            raw_array.data[mark++] = raw;
+            raw_array.num = mark;
         }
-        raw.x /= size;
-        raw.y /= size;
-        if(i >= 15) ROS_ERROR("lidar raw num > 15");
-        raw_array.data[i] = raw;
-        raw_array.num = i+1;
+    }else{
+        raw_array.num = 0;
     }
+    
     raw_array.header.stamp = input->header.stamp;
     lidar_rawArray_pub.publish(raw_array);
     PublidarPed(raw_array);
@@ -127,7 +174,7 @@ void LidarClusterHandler::cluster(const sensor_msgs::PointCloud2ConstPtr& input)
 }
 
 void LidarClusterHandler::PublidarPed(const detection::LidarRawArray& raw_array){
-    static int max_marker_size_ = 0;
+    static int pre_marker_size_ = 0;
     visualization_msgs::MarkerArray marker_array;
     visualization_msgs::Marker bbox_marker;
     bbox_marker.header.frame_id = fixed_frame;
@@ -150,28 +197,23 @@ void LidarClusterHandler::PublidarPed(const detection::LidarRawArray& raw_array)
         bbox_marker.pose.position.y = raw_array.data[i].y;
         bbox_marker.pose.position.z = -0.9;
         bbox_marker.scale.x = PED_WIDTH;
-        bbox_marker.scale.y = PED_WIDTH;
+        bbox_marker.scale.y = raw_array.data[i].width;
         bbox_marker.scale.z = PED_HEIGHT;
         marker_array.markers.push_back(bbox_marker);
     }
 
-    if (track_num > max_marker_size_)
+    if (track_num > pre_marker_size_)
     {
-        max_marker_size_ = track_num;
+        pre_marker_size_ = track_num;
     }
 
-    for (int i = marker_id; i < max_marker_size_; ++i)
+    for (int i = marker_id; i < pre_marker_size_; ++i)
     {
         bbox_marker.id = i;
-        bbox_marker.color.a = 0;
-        bbox_marker.pose.position.x = 0;
-        bbox_marker.pose.position.y = 0;
-        bbox_marker.pose.position.z = 0;
-        bbox_marker.scale.x = 0.1;
-        bbox_marker.scale.y = 0.1;
-        bbox_marker.scale.z = 0.1;
+        bbox_marker.action = visualization_msgs::Marker::DELETE;
         marker_array.markers.push_back(bbox_marker);
     }
+    pre_marker_size_ = marker_id;
     lidar_rviz_pub.publish(marker_array);
 }
 

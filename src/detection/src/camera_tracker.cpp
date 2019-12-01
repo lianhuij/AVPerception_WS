@@ -47,7 +47,7 @@ void CameraTracker::KF(const raw_data::CameraRawArray& input)
     for(int i=0; i<input.num; ++i){
         raw.rx = input.data[i].x;
         raw.ry = input.data[i].y;
-        raw.target_type = input.data[i].target_type;
+        raw.type = (ObjectType)(input.data[i].target_type);
         src.push_back(raw);
     }
 
@@ -81,7 +81,7 @@ void CameraTracker::InitTrack(const CameraObject &obj)
     X.push_back(init_X);
     P.push_back(init_P);
 
-    TrackCount init_info({0,0,0});
+    ObjectInfo init_info(obj.type, 0);
     track_info.push_back(init_info);
 }
 
@@ -248,7 +248,7 @@ bool CameraTracker::IsConverged(int track_index)
 
 void CameraTracker::PubCameraTracks()
 {
-    static int max_marker_size_ = 0;
+    static int pre_marker_size_ = 0;
     visualization_msgs::MarkerArray marker_array;
     visualization_msgs::Marker bbox_marker;
     bbox_marker.header.frame_id = FIXED_FRAME;
@@ -259,7 +259,6 @@ void CameraTracker::PubCameraTracks()
     bbox_marker.color.a = 0.5;
     bbox_marker.lifetime = ros::Duration();
     bbox_marker.frame_locked = true;
-    bbox_marker.type = visualization_msgs::Marker::CUBE;
     bbox_marker.action = visualization_msgs::Marker::ADD;
 
     int marker_id = 0;
@@ -270,6 +269,11 @@ void CameraTracker::PubCameraTracks()
         if (!IsConverged(i))  continue;
 
         bbox_marker.id = marker_id++;
+        switch(track_info[i].type){
+            case VEHICLE : bbox_marker.type = visualization_msgs::Marker::CUBE;     break;
+            case PED     : bbox_marker.type = visualization_msgs::Marker::CYLINDER; break;
+            default      : bbox_marker.type = visualization_msgs::Marker::CUBE;     break;
+        }
         bbox_marker.pose.position.x = X[i](0);
         bbox_marker.pose.position.y = X[i](1);
         bbox_marker.pose.position.z = -0.9;
@@ -279,22 +283,17 @@ void CameraTracker::PubCameraTracks()
         marker_array.markers.push_back(bbox_marker);
     }
 
-    if (marker_array.markers.size() > max_marker_size_)
+    if (marker_array.markers.size() > pre_marker_size_)
     {
-        max_marker_size_ = marker_array.markers.size();
+        pre_marker_size_ = marker_array.markers.size();
     }
 
-    for (int i = marker_id; i < max_marker_size_; ++i)
+    for (int i = marker_id; i < pre_marker_size_; ++i)
     {
         bbox_marker.id = i;
-        bbox_marker.color.a = 0;
-        bbox_marker.pose.position.x = 0;
-        bbox_marker.pose.position.y = 0;
-        bbox_marker.pose.position.z = 0;
-        bbox_marker.scale.x = 0.1;
-        bbox_marker.scale.y = 0.1;
-        bbox_marker.scale.z = 0.1;
+        bbox_marker.action = visualization_msgs::Marker::DELETE;
         marker_array.markers.push_back(bbox_marker);
     }
+    pre_marker_size_ = marker_id;
     camera_kf_pub.publish(marker_array);
 }

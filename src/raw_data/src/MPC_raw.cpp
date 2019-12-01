@@ -114,7 +114,7 @@ void MPCDataHandler::canHandler(const can_msgs::Frame& input)
             cam_pos.vx = (cam_pos.vx - 0x10000)/16.0;
         }
         cam_pos.ID = input.data[6];
-        cam_pos.target_type = input.data[7];
+        cam_pos.target_type = input.data[7];      // 0:vehicle, 1:truck, 2:bike, 3:ped, 4:bicycle
         camRaw.push_back(cam_pos);
         cam_num--;
         if(cam_num == 0){   //接收完本周期数据
