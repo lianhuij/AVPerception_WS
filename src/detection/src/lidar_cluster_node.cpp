@@ -1,6 +1,5 @@
 #include <ros/ros.h>
 #include <sensor_msgs/PointCloud2.h>
-#include <std_msgs/Float32.h>
 #include <pcl_conversions/pcl_conversions.h>
 #include <pcl/point_cloud.h>
 #include <pcl/ModelCoefficients.h>
@@ -36,7 +35,6 @@ protected:
     ros::Publisher pc_pub;
     ros::Publisher lidar_rviz_pub;
     ros::Publisher lidar_rawArray_pub;
-    // ros::Publisher time_pub;
     std::string fixed_frame;
     float ROI_width;
 
@@ -47,7 +45,6 @@ public:
         pc_pub   = nh.advertise<sensor_msgs::PointCloud2>("no_ground_pc", 1);        //发布话题：no_ground_pc
         lidar_rviz_pub = nh.advertise<visualization_msgs::MarkerArray>("lidar_raw_rviz", 10);
         lidar_rawArray_pub = nh.advertise<detection::LidarRawArray>("lidar_rawArray", 10);
-        // time_pub = nh.advertise<std_msgs::Float32>("lidar_cluster_time", 1);         //发布话题：lidar_cluster_time
 
         nh.getParam("/lidar_cluster_node/fixed_frame", fixed_frame);
         nh.getParam("/lidar_cluster_node/ROI_width", ROI_width);
@@ -160,17 +157,16 @@ void LidarClusterHandler::cluster(const sensor_msgs::PointCloud2ConstPtr& input)
             raw_array.data[mark++] = raw;
             raw_array.num = mark;
         }
+
     }else{
         raw_array.num = 0;
     }
-    
     raw_array.header.stamp = input->header.stamp;
+    // clock_t end = clock();
+    // float duration_ms = (float)(end-start)*1000/(float)CLOCKS_PER_SEC;  //程序用时 ms
+    // std::cout << "duration(ms) = " << duration_ms << std::endl;
     lidar_rawArray_pub.publish(raw_array);
     PublidarPed(raw_array);
-    // clock_t end = clock();
-    // std_msgs::Float32 time;
-    // time.data = (float)(end-start)*1000/(float)CLOCKS_PER_SEC;  //程序用时 ms
-    // time_pub.publish(time);   //发布程序耗时
 }
 
 void LidarClusterHandler::PublidarPed(const detection::LidarRawArray& raw_array){

@@ -128,7 +128,7 @@ void MPCDataHandler::canHandler(const can_msgs::Frame& input)
 //////////////////////////发布radar MarkerArray///////////////////////////
 void MPCDataHandler::pubRadarRaw(const std::vector<raw_data::RadarRaw>& input, const ros::Time& radar_stamp){
     
-    static int max_marker_size_ = 0;
+    static int pre_marker_size_ = 0;
     raw_data::RadarRawArray raw_array;
     visualization_msgs::MarkerArray marker_array;
     visualization_msgs::Marker bbox_marker;
@@ -151,7 +151,7 @@ void MPCDataHandler::pubRadarRaw(const std::vector<raw_data::RadarRaw>& input, c
         ROS_ERROR("radar raw num > 15");
         return ;
     }
-    for (size_t i = 0; i < raw_array.num; ++i)
+    for (int i = 0; i < raw_array.num; ++i)
     {
         bbox_marker.id = marker_id;
         bbox_marker.pose.position.x = input[i].x;
@@ -166,23 +166,18 @@ void MPCDataHandler::pubRadarRaw(const std::vector<raw_data::RadarRaw>& input, c
         raw_array.data[i] = input[i];
     }
 
-    if (raw_array.num > max_marker_size_)
+    if (raw_array.num > pre_marker_size_)
     {
-        max_marker_size_ = raw_array.num;
+        pre_marker_size_ = raw_array.num;
     }
 
-    for (size_t i = marker_id; i < max_marker_size_; ++i)
+    for (int i = marker_id; i < pre_marker_size_; ++i)
     {
         bbox_marker.id = i;
-        bbox_marker.color.a = 0;
-        bbox_marker.pose.position.x = 0;
-        bbox_marker.pose.position.y = 0;
-        bbox_marker.pose.position.z = 0;
-        bbox_marker.scale.x = 0.1;
-        bbox_marker.scale.y = 0.1;
-        bbox_marker.scale.z = 0.1;
+        bbox_marker.action = visualization_msgs::Marker::DELETE;
         marker_array.markers.push_back(bbox_marker);
     }
+    pre_marker_size_ = marker_id;
     radar_raw_pub.publish(marker_array);
     radar_rawArray_pub.publish(raw_array);
 }
@@ -190,7 +185,7 @@ void MPCDataHandler::pubRadarRaw(const std::vector<raw_data::RadarRaw>& input, c
 //////////////////////////发布camera MarkerArray///////////////////////////
 void MPCDataHandler::pubCamRaw(const std::vector<raw_data::CameraRaw>& input, const ros::Time& cam_stamp){
     
-    static int max_marker_size_ = 0;
+    static int pre_marker_size_ = 0;
     raw_data::CameraRawArray raw_array;
     visualization_msgs::MarkerArray marker_array;
     visualization_msgs::Marker bbox_marker;
@@ -213,7 +208,7 @@ void MPCDataHandler::pubCamRaw(const std::vector<raw_data::CameraRaw>& input, co
         ROS_ERROR("camera raw num > 10");
         return ;
     }
-    for (size_t i = 0; i < raw_array.num; ++i)
+    for (int i = 0; i < raw_array.num; ++i)
     {
         bbox_marker.id = marker_id;
         bbox_marker.pose.position.x = input[i].x;
@@ -228,23 +223,18 @@ void MPCDataHandler::pubCamRaw(const std::vector<raw_data::CameraRaw>& input, co
         raw_array.data[i] = input[i];
     }
 
-    if (raw_array.num > max_marker_size_)
+    if (raw_array.num > pre_marker_size_)
     {
-        max_marker_size_ = raw_array.num;
+        pre_marker_size_ = raw_array.num;
     }
 
-    for (size_t i = marker_id; i < max_marker_size_; ++i)
+    for (int i = marker_id; i < pre_marker_size_; ++i)
     {
         bbox_marker.id = i;
-        bbox_marker.color.a = 0;
-        bbox_marker.pose.position.x = 0;
-        bbox_marker.pose.position.y = 0;
-        bbox_marker.pose.position.z = 0;
-        bbox_marker.scale.x = 0.1;
-        bbox_marker.scale.y = 0.1;
-        bbox_marker.scale.z = 0.1;
+        bbox_marker.action = visualization_msgs::Marker::DELETE;
         marker_array.markers.push_back(bbox_marker);
     }
+    pre_marker_size_ = marker_id;
     cam_raw_pub.publish(marker_array);
     cam_rawArray_pub.publish(raw_array);
 }

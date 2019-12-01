@@ -24,7 +24,7 @@
   <!--读bag文件-->
   <node pkg="rosbag" type="play" name="player" args="$(find record_data)/bagfiles/191112_f10.bag" respawn="true" />    
 
-  <!--激光雷达地平面标定-->
+  <!--激光雷达地平面校正-->
   <node pkg="lidar_grid" type="lidar_calibration" name="lidar_calibration" >
     <param name="fixed_frame" value="$(arg fixed_frame)" />
     <param name="R" value="$(arg R)" />
@@ -42,6 +42,7 @@
     <param name="x_offset" value="$(arg x_offset)" />
   </node>
 
+  <!--激光雷达目标点云聚类-->
   <node pkg="detection" type="lidar_cluster_node" name="lidar_cluster_node" output="screen">
     <param name="fixed_frame" value="$(arg fixed_frame)" />
     <param name="ROI_width" value="$(arg ROI_width)" />
