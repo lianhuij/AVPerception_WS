@@ -30,6 +30,8 @@ public:
     void RemoveTrack(int index);
     bool IsConverged(int track_index);
     void PubRadarTracks();
+    void GetTimeStamp(ros::Time& stamp);
+    void GetRadarTrack(std::vector<LocalTrack>& tracks);
 
 private:
     std::vector<vector6d> X;  // rx ry vx vy ax ay

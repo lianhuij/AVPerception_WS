@@ -1,6 +1,10 @@
 #include <ros/ros.h>
 #include <visualization_msgs/Marker.h>
 #include <visualization_msgs/MarkerArray.h>
+// #include "detection/radar_tracker.h"
+#include "detection/radar_cmkf_tracker.h"
+#include "detection/camera_tracker.h"
+#include "detection/lidar_tracker.h"
 #include "detection/sensor_fusion.h"
 
 extern ros::Publisher fusion_pub;
@@ -22,11 +26,10 @@ SensorFusion::SensorFusion(void)
     track_info.clear();
     X.clear();
     P.clear();
+    radar_tracks.clear();
+    lidar_tracks.clear();
+    camera_tracks.clear();
     
-    init_P = matrix6d::Zero(6,6);
-    init_P(0,0) = 0.5;   init_P(1,1) = 0.5;
-    init_P(2,2) = 4;     init_P(3,3) = 4;
-    init_P(4,4) = 4;     init_P(5,5) = 4;
     F = matrix6d::Zero(6,6);
     F(0,0) = 1;          F(1,1) = 1;
     F(2,2) = 1;          F(3,3) = 1;
@@ -42,27 +45,13 @@ SensorFusion::~SensorFusion(void) { }
 void SensorFusion::Run(void)
 {
     // clock_t start = clock();
-    radar_tracker.GetTimeStamp(time_stamp);
-    ros::Time lidar_stamp, camera_stamp;
-    lidar_tracker.GetTimeStamp(lidar_stamp);
-    camera_tracker.GetTimeStamp(camera_stamp);
-
     GetLocalTracks();
-
-    std::vector<LidarObject> src;
-    LidarObject raw;
-    for(int i=0; i<input.num; ++i){
-        raw.rx = input.data[i].x;
-        raw.ry = input.data[i].y;
-        raw.width = input.data[i].width;
-        src.push_back(raw);
-    }
 
     if (!X.size())
     {
-      for (auto &obj : src)
+      for (auto &pair : local_matched_pair)
       {
-          InitTrack(obj);
+          InitTrack(pair);
       }
       time_stamp = input.header.stamp;
     }
@@ -81,17 +70,114 @@ void SensorFusion::Run(void)
 }
 
 void SensorFusion::GetLocalTracks(void){
+    lidar_tracker.GetTimeStamp(time_stamp);
+    ros::Time radar_stamp, camera_stamp;
+    radar_tracker.GetTimeStamp(radar_stamp);
+    camera_tracker.GetTimeStamp(camera_stamp);
+    lidar_tracker.GetLidarTrack(lidar_tracks);
+    radar_tracker.GetRadarTrack(radar_tracks);
+    camera_tracker.GetCameraTrack(camera_tracks);
 
+    //对齐radar信息
+    double dt = (time_stamp - radar_stamp).toSec();
+    F(0,2) = F(1,3) = F(2,4) = F(3,5) = dt;
+    F(0,4) = F(1,5) = dt*dt/2;
+    matrix6d Qr = matrix6d::Zero(6,6);
+    Qr(0,0) = 0.05;      Qr(1,1) = 0.05;
+    Qr(2,2) = 0.1;       Qr(3,3) = 0.1;
+    Qr(4,4) = 0.3;       Qr(5,5) = 0.3;
+    for(std::vector<LocalTrack>::iterator it= radar_tracks.begin(); it!= radar_tracks.end(); ++it){
+        it->X = F * it->X;
+        it->X(0) += X_OFFSET;
+        it->P = F * it->P * F.transpose() + Qr;
+    }
+
+    //对齐camera信息
+    dt = (time_stamp - camera_stamp).toSec();
+    F(0,2) = F(1,3) = F(2,4) = F(3,5) = dt;
+    F(0,4) = F(1,5) = dt*dt/2;
+    for(std::vector<LocalTrack>::iterator it= camera_tracks.begin(); it!= camera_tracks.end(); ++it){
+        it->X = F * it->X;
+    }
+
+    // lidar & radar 局部航迹数据关联
+    int lidar_track_num = lidar_tracks.size();
+    int radar_track_num = radar_tracks.size();
+    local_matched_pair.clear();
+    radar_matched.clear();
+    radar_matched.resize(radar_track_num, false);
+    lidar_matched.clear();
+    lidar_matched.resize(lidar_track_num, false);
+    matrixXd w_ij = matrixXd::Zero(radar_track_num, lidar_track_num + radar_track_num);
+
+    for ( int i = 0; i < radar_track_num; ++i )
+    {
+        vector6d Xr = radar_tracks[i].X;
+        matrix6d Pr = radar_tracks[i].P;
+        for ( int j = 0; j < lidar_track_num; ++j ){
+            vector6d Xl = lidar_tracks[i].X;
+            matrix6d Pl = lidar_tracks[i].P;
+            matrix6d C = Pr + Pl;
+            w_ij(i, j) = normalDistributionDensity< 6 >(C, Xr, Xl);
+            // std::cout << "w_ij(i, j) = " << w_ij(i, j) <<std::endl;
+        }
+    }
+
+    for ( int j = lidar_track_num; j < lidar_track_num + radar_track_num; ++j ){
+        w_ij(j - lidar_track_num, j) = FUSION_NEWOBJ_WEIGHT;
+    }
+
+    // solve the maximum-sum-of-weights problem (i.e. assignment problem)
+    // in this case it is global nearest neighbour by minimizing the distances
+    // over all measurement-filter-associations
+    Auction<double>::Edges assignments = Auction<double>::solve(w_ij);
+
+    // for all found assignments
+    for ( const auto & e : assignments )
+    {
+        if ( e.y < lidar_track_num )  // radar & lidar 关联成功
+        {
+            std::pair<int, int> pair(e.x, e.y);  // (radar, lidar)
+            local_matched_pair.push_back(pair);
+            radar_matched[e.x] = true;
+            lidar_matched[e.y] = true;
+        }
+        else // 未关联的局部航迹 radar
+        {
+            std::pair<int, int> pair(e.x, -1);  // 表示单独的radar航迹
+            local_matched_pair.push_back(pair);
+        }
+    }
+
+    for (int i=0; i<lidar_track_num; ++i)
+    {
+        if (!lidar_matched[i]) // 未关联的局部航迹 lidar
+        {
+            std::pair<int, int> pair(-1, i);  // 表示单独的lidar航迹
+            local_matched_pair.push_back(pair);
+        }
+    }
 }
 
-void SensorFusion::InitTrack(const LidarObject &obj)
+void SensorFusion::InitTrack(const std::pair<int, int>& pair)
 {
+    int radar_index = pair.first;
+    int lidar_index = pair.second;
     vector6d init_X = vector6d::Zero(6);
-    init_X(0) = obj.rx;
-    init_X(1) = obj.ry;
+    matrix6d init_P = matrix6d::Zero(6,6);
+    if(radar_index == -1){
+        init_X = lidar_tracks[lidar_index].X;
+        init_P = lidar_tracks[lidar_index].P;
+    }else if(lidar_index == -1){
+        init_X = radar_tracks[radar_index].X;
+        init_P = radar_tracks[radar_index].P;
+    }else{
+        init_P = (radar_tracks[radar_index].P.inverse() + lidar_tracks[lidar_index].P.inverse()).inverse();
+        init_X = init_P * (radar_tracks[radar_index].P.inverse() * radar_tracks[radar_index].X
+                           + lidar_tracks[lidar_index].P.inverse() * lidar_tracks[lidar_index].X);
+    }
     X.push_back(init_X);
     P.push_back(init_P);
-
     ObjectInfo init_info(UNKNOWN, obj.width);
     track_info.push_back(init_info);
 }
@@ -101,11 +187,11 @@ void SensorFusion::Predict()
     if(X.size() != P.size()){
       ROS_ERROR("lidar tracker error: Predict state size not equal");
     }
+    F(0,2) = F(1,3) = F(2,4) = F(3,5) = ts;
+    F(0,4) = F(1,5) = ts*ts/2;
     int prev_track_num = X.size();
     for (int i=0; i<prev_track_num; ++i)
     {
-        F(0,2) = F(1,3) = F(2,4) = F(3,5) = ts;
-        F(0,4) = F(1,5) = ts*ts/2;
         X[i] = F * X[i];
         P[i] = F * P[i] * F.transpose() + Q;
     }

@@ -17,7 +17,7 @@ public:
 
     void Run(void);
     void GetLocalTracks(void);
-    void InitTrack(const LidarObject &obj);
+    void InitTrack(const std::pair<int, int>& pair);
     void Predict(void);
     void MatchGNN(const std::vector<LidarObject>& src);
     void Update(const std::vector<LidarObject>& src);
@@ -29,11 +29,13 @@ private:
     std::vector<vector6d> X;  // rx ry vx vy ax ay
     std::vector<matrix6d> P;
     std::vector<ObjectInfo> track_info;
-    matrix6d init_P;
     matrix6d F;
     matrix6d Q;
+    std::vector<LocalTrack> radar_tracks;
+    std::vector<LocalTrack> lidar_tracks;
+    std::vector<LocalTrack> camera_tracks;
 
-    std::vector<std::pair<int, int> > local_matched_pair;
+    std::vector<std::pair<int, int> > local_matched_pair;  // <radar, lidar>
     std::vector<bool> radar_matched;
     std::vector<bool> lidar_matched;
     std::vector<std::pair<int, int> > matched_pair;

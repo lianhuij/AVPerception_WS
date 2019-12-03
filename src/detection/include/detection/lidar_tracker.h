@@ -27,6 +27,7 @@ public:
     bool IsConverged(int track_index);
     void PubLidarTracks();
     void GetTimeStamp(ros::Time& stamp);
+    void GetLidarTrack(std::vector<LocalTrack>& tracks);
 
 private:
     std::vector<vector6d> X;  // rx ry vx vy ax ay

@@ -105,11 +105,11 @@ void RadarCMKFTracker::Predict()
     if(X.size() != P.size()){
       ROS_ERROR("radar tracker error: Predict state size not equal");
     }
+    F(0,2) = F(1,3) = F(2,4) = F(3,5) = ts;
+    F(0,4) = F(1,5) = ts*ts/2;
     int prev_track_num = X.size();
     for (int i=0; i<prev_track_num; ++i)
     {
-        F(0,2) = F(1,3) = F(2,4) = F(3,5) = ts;
-        F(0,4) = F(1,5) = ts*ts/2;
         X[i] = F * X[i];
         P[i] = F * P[i] * F.transpose() + Q;
     }
@@ -126,8 +126,7 @@ void RadarCMKFTracker::MatchGNN(std::vector<RadarObject> &src)
     prev_matched.clear();
     prev_matched.resize(prev_track_num, false);
 
-    matrixXd w_ij(src_obj_num, prev_track_num + src_obj_num);
-    w_ij = matrixXd::Zero(src_obj_num, prev_track_num + src_obj_num);
+    matrixXd w_ij = matrixXd::Zero(src_obj_num, prev_track_num + src_obj_num);
 
     // get likelihoods of measurements within track pdfs
     for ( int i = 0; i < src_obj_num; ++i )
@@ -360,4 +359,15 @@ void RadarCMKFTracker::PubRadarTracks()
 
 void RadarCMKFTracker::GetTimeStamp(ros::Time& stamp){
     stamp = time_stamp;
+}
+
+void RadarCMKFTracker::GetRadarTrack(std::vector<LocalTrack>& tracks){
+    tracks.clear();
+    LocalTrack track;
+    int size = X.size();
+    for(int i=0; i<size; ++i){
+        track.X = X[i];
+        track.P = P[i];
+        tracks.push_back(track);
+    }
 }

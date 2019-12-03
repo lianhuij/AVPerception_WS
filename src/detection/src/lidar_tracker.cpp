@@ -89,11 +89,11 @@ void LidarTracker::Predict()
     if(X.size() != P.size()){
       ROS_ERROR("lidar tracker error: Predict state size not equal");
     }
+    F(0,2) = F(1,3) = F(2,4) = F(3,5) = ts;
+    F(0,4) = F(1,5) = ts*ts/2;
     int prev_track_num = X.size();
     for (int i=0; i<prev_track_num; ++i)
     {
-        F(0,2) = F(1,3) = F(2,4) = F(3,5) = ts;
-        F(0,4) = F(1,5) = ts*ts/2;
         X[i] = F * X[i];
         P[i] = F * P[i] * F.transpose() + Q;
     }
@@ -110,8 +110,7 @@ void LidarTracker::MatchGNN(const std::vector<LidarObject>& src)
     prev_matched.clear();
     prev_matched.resize(prev_track_num, false);
 
-    matrixXd w_ij(src_obj_num, prev_track_num + src_obj_num);
-    w_ij = matrixXd::Zero(src_obj_num, prev_track_num + src_obj_num);
+    matrixXd w_ij = matrixXd::Zero(src_obj_num, prev_track_num + src_obj_num);
 
     // get likelihoods of measurements within track pdfs
     for ( int i = 0; i < src_obj_num; ++i )
@@ -294,4 +293,16 @@ void LidarTracker::PubLidarTracks()
 
 void LidarTracker::GetTimeStamp(ros::Time& stamp){
     stamp = time_stamp;
+}
+
+void LidarTracker::GetLidarTrack(std::vector<LocalTrack>& tracks){
+    tracks.clear();
+    LocalTrack track;
+    int size = X.size();
+    for(int i=0; i<size; ++i){
+        track.X = X[i];
+        track.P = P[i];
+        track.width = track_info[i].width;
+        tracks.push_back(track);
+    }
 }
