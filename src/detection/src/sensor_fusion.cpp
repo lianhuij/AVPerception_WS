@@ -1,13 +1,21 @@
 #include <ros/ros.h>
 #include <visualization_msgs/Marker.h>
 #include <visualization_msgs/MarkerArray.h>
-#include "detection/lidar_tracker.h"
+#include "detection/sensor_fusion.h"
 
-extern ros::Publisher lidar_kf_pub;
+extern ros::Publisher fusion_pub;
 extern std::string FIXED_FRAME;
+extern float X_OFFSET;
+// extern RadarTracker radar_tracker;
+extern RadarCMKFTracker radar_tracker;
+extern CameraTracker camera_tracker;
+extern LidarTracker lidar_tracker;
 
-LidarTracker::LidarTracker()
+SensorFusion::SensorFusion(void)
 {
+    local_matched_pair.clear();
+    radar_matched.clear();
+    lidar_matched.clear();
     matched_pair.clear();
     prev_matched.clear();
     src_matched.clear();
@@ -15,32 +23,32 @@ LidarTracker::LidarTracker()
     X.clear();
     P.clear();
     
-    ts = 0.1;
     init_P = matrix6d::Zero(6,6);
-    init_P(0,0) = 1;    init_P(1,1) = 1;
-    init_P(2,2) = 16;   init_P(3,3) = 16;
-    init_P(4,4) = 16;   init_P(5,5) = 16;
+    init_P(0,0) = 0.5;   init_P(1,1) = 0.5;
+    init_P(2,2) = 4;     init_P(3,3) = 4;
+    init_P(4,4) = 4;     init_P(5,5) = 4;
     F = matrix6d::Zero(6,6);
-    F(0,0) = 1;         F(1,1) = 1;
-    F(2,2) = 1;         F(3,3) = 1;
-    F(4,4) = 1;         F(5,5) = 1;
+    F(0,0) = 1;          F(1,1) = 1;
+    F(2,2) = 1;          F(3,3) = 1;
+    F(4,4) = 1;          F(5,5) = 1;
     Q = matrix6d::Zero(6,6);
-    Q(0,0) = 0.001;     Q(1,1) = 0.001;
-    Q(2,2) = 0.05;      Q(3,3) = 0.05;
-    Q(4,4) = 0.1;       Q(5,5) = 0.1;
-    H = matrix2_6d::Zero(2,6);
-    H(0,0) = 1;
-    H(1,1) = 1;
-    R = matrix2d::Zero(2,2);
-    R(0,0) = 0.0225;       // 0.15^2
-    R(1,1) = 0.0225;       // 0.15^2
+    Q(0,0) = 0.0001;     Q(1,1) = 0.0001;
+    Q(2,2) = 0.005;      Q(3,3) = 0.005;
+    Q(4,4) = 0.01;       Q(5,5) = 0.01;
 }
 
-LidarTracker::~LidarTracker() { }
+SensorFusion::~SensorFusion(void) { }
 
-void LidarTracker::KF(const detection::LidarRawArray& input)
+void SensorFusion::Run(void)
 {
     // clock_t start = clock();
+    radar_tracker.GetTimeStamp(time_stamp);
+    ros::Time lidar_stamp, camera_stamp;
+    lidar_tracker.GetTimeStamp(lidar_stamp);
+    camera_tracker.GetTimeStamp(camera_stamp);
+
+    GetLocalTracks();
+
     std::vector<LidarObject> src;
     LidarObject raw;
     for(int i=0; i<input.num; ++i){
@@ -69,10 +77,14 @@ void LidarTracker::KF(const detection::LidarRawArray& input)
     // clock_t end = clock();
     // float duration_ms = (float)(end-start)*1000/(float)CLOCKS_PER_SEC;  //程序用时 ms
     // std::cout << "duration(ms) = " << duration_ms << std::endl;
-    PubLidarTracks();
+    PubFusionTracks();
 }
 
-void LidarTracker::InitTrack(const LidarObject &obj)
+void SensorFusion::GetLocalTracks(void){
+
+}
+
+void SensorFusion::InitTrack(const LidarObject &obj)
 {
     vector6d init_X = vector6d::Zero(6);
     init_X(0) = obj.rx;
@@ -84,7 +96,7 @@ void LidarTracker::InitTrack(const LidarObject &obj)
     track_info.push_back(init_info);
 }
 
-void LidarTracker::Predict()
+void SensorFusion::Predict()
 {
     if(X.size() != P.size()){
       ROS_ERROR("lidar tracker error: Predict state size not equal");
@@ -99,7 +111,7 @@ void LidarTracker::Predict()
     }
 }
 
-void LidarTracker::MatchGNN(const std::vector<LidarObject>& src)
+void SensorFusion::MatchGNN(const std::vector<LidarObject>& src)
 {
     int prev_track_num = X.size();
     int src_obj_num = src.size();
@@ -183,7 +195,7 @@ void LidarTracker::MatchGNN(const std::vector<LidarObject>& src)
     }
 }
 
-void LidarTracker::Update(const std::vector<LidarObject>& src)
+void SensorFusion::Update(const std::vector<LidarObject>& src)
 {
     if(X.size() != P.size()){
       ROS_ERROR("lidar tracker error: Update state size not equal");
@@ -214,20 +226,20 @@ template <class T>
 static void erase_from_vector(std::vector<T> &v, int index)
 {
     if(index >= v.size()){
-      ROS_ERROR("lidar tracker error: remove track index >= size");
+      ROS_ERROR("fusion tracker error: remove track index >= size");
       return;
     }
     v.erase(v.begin() + index);
 }
 
-void LidarTracker::RemoveTrack(int index)
+void SensorFusion::RemoveTrack(int index)
 {
     erase_from_vector(X, index);
     erase_from_vector(P, index);
     erase_from_vector(track_info, index);
 }
 
-bool LidarTracker::IsConverged(int track_index)
+bool SensorFusion::IsConverged(int track_index)
 {
     bool converged = false;
     float rx_cov = P[track_index](0,0);
@@ -244,7 +256,7 @@ bool LidarTracker::IsConverged(int track_index)
     return converged;
 }
 
-void LidarTracker::PubLidarTracks()
+void SensorFusion::PubFusionTracks(void)
 {
     static int pre_marker_size_ = 0;
     visualization_msgs::MarkerArray marker_array;
@@ -290,8 +302,4 @@ void LidarTracker::PubLidarTracks()
     }
     pre_marker_size_ = marker_id;
     lidar_kf_pub.publish(marker_array);
-}
-
-void LidarTracker::GetTimeStamp(ros::Time& stamp){
-    stamp = time_stamp;
 }

@@ -196,6 +196,8 @@ include_directories(
 # catkin_add_nosetests(test)
 
 add_executable(tracker_node
+  src/sensor_fusion.cpp
+  include/detection/sensor_fusion.h
   include/detection/lidar_tracker.h
   src/lidar_tracker.cpp
   src/radar_cmkf_tracker.cpp

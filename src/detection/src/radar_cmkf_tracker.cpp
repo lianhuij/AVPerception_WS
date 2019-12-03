@@ -17,7 +17,6 @@ RadarCMKFTracker::RadarCMKFTracker()
     P.clear();
     
     ts = 0.05;
-    time_stamp = ros::Time::now();
     init_P = matrix6d::Zero(6,6);
     init_P(0,0) = 1;    init_P(1,1) = 1;
     init_P(2,2) = 16;   init_P(3,3) = 16;
@@ -357,4 +356,8 @@ void RadarCMKFTracker::PubRadarTracks()
     }
     pre_marker_size_ = marker_id;
     radar_cmkf_pub.publish(marker_array);
+}
+
+void RadarCMKFTracker::GetTimeStamp(ros::Time& stamp){
+    stamp = time_stamp;
 }

@@ -1,32 +1,29 @@
-#ifndef DETECTION_LIDAR_TRACKER_H
-#define DETECTION_LIDAR_TRACKER_H
+#ifndef DETECTION_SENSOR_FUSION_H
+#define DETECTION_SENSOR_FUSION_H
 
 #include <ros/ros.h>
-#include <detection/LidarRawArray.h>
 #include "detection/object.h"
 #include "detection/GNN.h"
 
-const int LIDAR_MIN_CONFIDENCE   = 7;
-const int LIDAR_MAX_CONFIDENCE   = 100;
-const float LIDAR_NEWOBJ_WEIGHT  = 0.01;
-const float LIDAR_RX_GATE  = 0.8;   // rx 0.8m, ry 0.8m
-const float LIDAR_RY_GATE  = 0.8;
+const int FUSION_MIN_CONFIDENCE   = 7;
+const int FUSION_MAX_CONFIDENCE   = 100;
+const float FUSION_NEWOBJ_WEIGHT  = 0.01;
 
-class LidarTracker
+class SensorFusion
 {
 public:
-    LidarTracker();
-    ~LidarTracker();
+    SensorFusion(void);
+    ~SensorFusion(void);
 
-    void KF(const detection::LidarRawArray& input);
+    void Run(void);
+    void GetLocalTracks(void);
     void InitTrack(const LidarObject &obj);
-    void Predict();
+    void Predict(void);
     void MatchGNN(const std::vector<LidarObject>& src);
     void Update(const std::vector<LidarObject>& src);
     void RemoveTrack(int index);
     bool IsConverged(int track_index);
-    void PubLidarTracks();
-    void GetTimeStamp(ros::Time& stamp);
+    void PubFusionTracks(void);
 
 private:
     std::vector<vector6d> X;  // rx ry vx vy ax ay
@@ -35,9 +32,10 @@ private:
     matrix6d init_P;
     matrix6d F;
     matrix6d Q;
-    matrix2_6d H;
-    matrix2d R;
 
+    std::vector<std::pair<int, int> > local_matched_pair;
+    std::vector<bool> radar_matched;
+    std::vector<bool> lidar_matched;
     std::vector<std::pair<int, int> > matched_pair;
     std::vector<bool> prev_matched;
     std::vector<bool> src_matched;
@@ -46,4 +44,4 @@ private:
     ros::Time time_stamp;
 };
 
-#endif // DETECTION_LIDAR_TRACKER_H
+#endif // DETECTION_SENSOR_FUSION_H

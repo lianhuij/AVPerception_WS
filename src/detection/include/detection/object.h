@@ -27,13 +27,11 @@ const float PED_HEIGHT = 1.7;
 
 typedef enum ObjectType{ VEHICLE, TRUCK, BIKE, PED, BICYCLE, UNKNOWN }ObjectType;
 
-struct Object
-{
+struct Object{
     int id;
 };
 
-struct ObjectState : Object
-{
+struct ObjectState : Object{
     float rx;
     float ry;
     float vx;
@@ -47,29 +45,25 @@ struct ObjectState : Object
     float vy_cov;
 };
 
-struct RadarObject : Object
-{
+struct RadarObject : Object{
     float r;
     float theta;
     float vt;
 };
 
-struct CameraObject : Object
-{
+struct CameraObject : Object{
     float rx;
     float ry;
     ObjectType type;
 };
 
-struct LidarObject : Object
-{
+struct LidarObject : Object{
     float rx;
     float ry;
     float width;
 };
 
-struct ObjectInfo : Object
-{
+struct ObjectInfo : Object{
     int confi_inc;
     int confi_dec;
     int confidence;
@@ -85,6 +79,13 @@ struct ObjectInfo : Object
         type  = UNKNOWN;
         width = 0;
     }
+};
+
+struct LocalTrack : Object{
+    vector6d X;  // rx ry vx vy ax ay
+    matrix6d P;
+    ObjectType type;
+    float width;
 };
 
 #endif // DETECTION_OBJECT_H
