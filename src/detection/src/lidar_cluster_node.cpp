@@ -25,6 +25,7 @@
 const float CLUSTER_TOLERANCE = 0.6;
 const int MIN_CLUSTER_SIZE    = 7;
 const int MAX_CLUSTER_SIZE    = 400;
+const float OBJECT_MIN_WIDTH  = 0.5;
 
 ///////////////////////激光雷达点云目标聚类处理类////////////////////////
 class LidarClusterHandler
@@ -152,7 +153,7 @@ void LidarClusterHandler::cluster(const sensor_msgs::PointCloud2ConstPtr& input)
             raw.x = centroid[0];
             raw.y = centroid[1];
             raw.width = maxpoint.y - minpoint.y;
-            if(raw.width < 0.5) raw.width = 0.5;
+            if(raw.width < OBJECT_MIN_WIDTH) raw.width = OBJECT_MIN_WIDTH;
             if(mark >= 15) ROS_ERROR("lidar raw num > 15");
             raw_array.data[mark++] = raw;
             raw_array.num = mark;
@@ -178,7 +179,7 @@ void LidarClusterHandler::PublidarPed(const detection::LidarRawArray& raw_array)
     bbox_marker.color.r = 0.0f;
     bbox_marker.color.g = 1.0f;    //lidar color green
     bbox_marker.color.b = 0.0f;
-    bbox_marker.color.a = 0.5;
+    bbox_marker.color.a = 0.5f;
     bbox_marker.lifetime = ros::Duration();
     bbox_marker.frame_locked = true;
     bbox_marker.type = visualization_msgs::Marker::CUBE;

@@ -254,7 +254,7 @@ void CameraTracker::PubCameraTracks()
     bbox_marker.color.r = 0.0f;
     bbox_marker.color.g = 0.0f;
     bbox_marker.color.b = 1.0f;    //camera color blue
-    bbox_marker.color.a = 0.5;
+    bbox_marker.color.a = 0.5f;
     bbox_marker.lifetime = ros::Duration();
     bbox_marker.frame_locked = true;
     bbox_marker.action = visualization_msgs::Marker::ADD;
@@ -305,6 +305,8 @@ void CameraTracker::GetCameraTrack(std::vector<LocalTrack>& tracks){
     LocalTrack track;
     int size = X.size();
     for(int i=0; i<size; ++i){
+        if(track_info[i].confidence < CAM_MIN_CONFIDENCE) continue;
+        if (!IsConverged(i))  continue;
         track.X = X[i];
         track.type = track_info[i].type;
         tracks.push_back(track);

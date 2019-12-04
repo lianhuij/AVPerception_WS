@@ -319,7 +319,7 @@ void RadarCMKFTracker::PubRadarTracks()
     bbox_marker.color.r = 1.0f;    //radar color red
     bbox_marker.color.g = 0.0f;
     bbox_marker.color.b = 0.0f;
-    bbox_marker.color.a = 0.5;
+    bbox_marker.color.a = 0.5f;
     bbox_marker.lifetime = ros::Duration();
     bbox_marker.frame_locked = true;
     bbox_marker.type = visualization_msgs::Marker::CUBE;
@@ -366,6 +366,8 @@ void RadarCMKFTracker::GetRadarTrack(std::vector<LocalTrack>& tracks){
     LocalTrack track;
     int size = X.size();
     for(int i=0; i<size; ++i){
+        if(track_info[i].confidence < RADAR_MIN_CONFIDENCE) continue;
+        if (!IsConverged(i))  continue;
         track.X = X[i];
         track.P = P[i];
         tracks.push_back(track);

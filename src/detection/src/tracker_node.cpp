@@ -38,6 +38,7 @@ int main(int argc,char** argv)
     radar_cmkf_pub = nh.advertise<visualization_msgs::MarkerArray>("radar_cmkf_rviz", 10);
     camera_kf_pub  = nh.advertise<visualization_msgs::MarkerArray>("camera_kf_rviz", 10);
     lidar_kf_pub   = nh.advertise<visualization_msgs::MarkerArray>("lidar_kf_rviz", 10);
+    fusion_pub     = nh.advertise<visualization_msgs::MarkerArray>("fusion_rviz", 10);
     
     ros::spin();
     return 0;

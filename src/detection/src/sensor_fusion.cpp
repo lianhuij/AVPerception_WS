@@ -35,9 +35,9 @@ SensorFusion::SensorFusion(void)
     F(2,2) = 1;          F(3,3) = 1;
     F(4,4) = 1;          F(5,5) = 1;
     Q = matrix6d::Zero(6,6);
-    Q(0,0) = 0.0001;     Q(1,1) = 0.0001;
-    Q(2,2) = 0.005;      Q(3,3) = 0.005;
-    Q(4,4) = 0.01;       Q(5,5) = 0.01;
+    Q(0,0) = 0.0005;     Q(1,1) = 0.0005;
+    Q(2,2) = 0.01;       Q(3,3) = 0.01;
+    Q(4,4) = 0.05;       Q(5,5) = 0.05;
 }
 
 SensorFusion::~SensorFusion(void) { }
@@ -53,15 +53,15 @@ void SensorFusion::Run(void)
       {
           InitTrack(pair);
       }
-      time_stamp = input.header.stamp;
+      prev_stamp = time_stamp;
     }
     else
     {
-      ts = (input.header.stamp - time_stamp).toSec();
-      time_stamp = input.header.stamp;
+      ts = (time_stamp - prev_stamp).toSec();
+      prev_stamp = time_stamp;
       Predict();
-      MatchGNN(src);
-      Update(src);
+      MatchGNN();
+      Update();
     }
     // clock_t end = clock();
     // float duration_ms = (float)(end-start)*1000/(float)CLOCKS_PER_SEC;  //程序用时 ms
@@ -104,6 +104,24 @@ void SensorFusion::GetLocalTracks(void){
     int lidar_track_num = lidar_tracks.size();
     int radar_track_num = radar_tracks.size();
     local_matched_pair.clear();
+    if(radar_track_num == 0 && lidar_track_num > 0){
+        for (int i=0; i<lidar_track_num; ++i)
+        {
+            std::pair<int, int> pair(-1, i);  // 表示单独的lidar航迹
+            local_matched_pair.push_back(pair);
+        }
+        return;
+    }else if(radar_track_num > 0 && lidar_track_num == 0){
+        for (int i=0; i<radar_track_num; ++i)
+        {
+            std::pair<int, int> pair(i, -1);  // 表示单独的radar航迹
+            local_matched_pair.push_back(pair);
+        }
+        return;
+    }else if(radar_track_num == 0 && lidar_track_num == 0){
+        return;
+    }
+    
     radar_matched.clear();
     radar_matched.resize(radar_track_num, false);
     lidar_matched.clear();
@@ -117,14 +135,18 @@ void SensorFusion::GetLocalTracks(void){
         for ( int j = 0; j < lidar_track_num; ++j ){
             vector6d Xl = lidar_tracks[i].X;
             matrix6d Pl = lidar_tracks[i].P;
-            matrix6d C = Pr + Pl;
-            w_ij(i, j) = normalDistributionDensity< 6 >(C, Xr, Xl);
-            // std::cout << "w_ij(i, j) = " << w_ij(i, j) <<std::endl;
+            if(fabs(Xr(0)- Xl(0)) < RX_TRACK_GATE && fabs(Xr(1)- Xl(1)) < RY_TRACK_GATE){
+                matrix6d C = Pr + Pl;
+                w_ij(i, j) = normalDistributionDensity< 6 >(C, Xr, Xl);
+                // std::cout << "w_ij(i, j) = " << w_ij(i, j) <<std::endl;
+            }else{
+                w_ij(i, j) = 0;
+            }
         }
     }
 
     for ( int j = lidar_track_num; j < lidar_track_num + radar_track_num; ++j ){
-        w_ij(j - lidar_track_num, j) = FUSION_NEWOBJ_WEIGHT;
+        w_ij(j - lidar_track_num, j) = LOCAL_SINGLE_WEIGHT;
     }
 
     // solve the maximum-sum-of-weights problem (i.e. assignment problem)
@@ -159,15 +181,51 @@ void SensorFusion::GetLocalTracks(void){
     }
 }
 
+ObjectType SensorFusion::GetCameraType(const std::pair<int, int>& pair){
+    int radar_index = pair.first;
+    int lidar_index = pair.second;
+    float min_dist= CAMERA_TRACK_GATE;
+    int camera_index;
+    int size = camera_tracks.size();
+    if(lidar_index == -1){
+        float x = radar_tracks[radar_index].X(0);
+        float y = radar_tracks[radar_index].X(1);
+        for(int i=0; i<size; ++i){
+            float dist = fabs(x- camera_tracks[i].X(0)) + fabs(y- camera_tracks[i].X(1));
+            if(min_dist > dist){
+                min_dist = dist;
+                camera_index = i;
+            }
+        }
+    }else{
+        float x = lidar_tracks[lidar_index].X(0);
+        float y = lidar_tracks[lidar_index].X(1);
+        for(int i=0; i<size; ++i){
+            float dist = fabs(x- camera_tracks[i].X(0)) + fabs(y- camera_tracks[i].X(1));
+            if(min_dist > dist){
+                min_dist = dist;
+                camera_index = i;
+            }
+        }
+    }
+    if(min_dist < CAMERA_TRACK_GATE){
+        return camera_tracks[camera_index].type;
+    }
+    return UNKNOWN;
+}
+
 void SensorFusion::InitTrack(const std::pair<int, int>& pair)
 {
     int radar_index = pair.first;
     int lidar_index = pair.second;
+    ObjectInfo init_info;
+    init_info.type = GetCameraType(pair);
     vector6d init_X = vector6d::Zero(6);
     matrix6d init_P = matrix6d::Zero(6,6);
     if(radar_index == -1){
         init_X = lidar_tracks[lidar_index].X;
         init_P = lidar_tracks[lidar_index].P;
+        init_info.width = lidar_tracks[lidar_index].width;
     }else if(lidar_index == -1){
         init_X = radar_tracks[radar_index].X;
         init_P = radar_tracks[radar_index].P;
@@ -175,17 +233,17 @@ void SensorFusion::InitTrack(const std::pair<int, int>& pair)
         init_P = (radar_tracks[radar_index].P.inverse() + lidar_tracks[lidar_index].P.inverse()).inverse();
         init_X = init_P * (radar_tracks[radar_index].P.inverse() * radar_tracks[radar_index].X
                            + lidar_tracks[lidar_index].P.inverse() * lidar_tracks[lidar_index].X);
+        init_info.width = lidar_tracks[lidar_index].width;
     }
     X.push_back(init_X);
     P.push_back(init_P);
-    ObjectInfo init_info(UNKNOWN, obj.width);
     track_info.push_back(init_info);
 }
 
 void SensorFusion::Predict()
 {
     if(X.size() != P.size()){
-      ROS_ERROR("lidar tracker error: Predict state size not equal");
+      ROS_ERROR("fusion tracker error: Predict state size not equal");
     }
     F(0,2) = F(1,3) = F(2,4) = F(3,5) = ts;
     F(0,4) = F(1,5) = ts*ts/2;
@@ -197,10 +255,10 @@ void SensorFusion::Predict()
     }
 }
 
-void SensorFusion::MatchGNN(const std::vector<LidarObject>& src)
+void SensorFusion::MatchGNN(void)
 {
     int prev_track_num = X.size();
-    int src_obj_num = src.size();
+    int src_obj_num = local_matched_pair.size();
 
     matched_pair.clear();
     src_matched.clear();
@@ -208,33 +266,36 @@ void SensorFusion::MatchGNN(const std::vector<LidarObject>& src)
     prev_matched.clear();
     prev_matched.resize(prev_track_num, false);
 
-    matrixXd w_ij(src_obj_num, prev_track_num + src_obj_num);
-    w_ij = matrixXd::Zero(src_obj_num, prev_track_num + src_obj_num);
+    matrixXd w_ij = matrixXd::Zero(src_obj_num, prev_track_num + src_obj_num);
 
-    // get likelihoods of measurements within track pdfs
     for ( int i = 0; i < src_obj_num; ++i )
     {
-        float rx = src[i].rx;
-        float ry = src[i].ry;
-        vector2d z(rx, ry);
+        int radar_index = local_matched_pair[i].first;
+        int lidar_index = local_matched_pair[i].second;
+        vector6d Xm;
+        matrix6d Pm;
+        if(lidar_index == -1){
+            Xm = radar_tracks[radar_index].X;
+            Pm = radar_tracks[radar_index].P;
+        }else{
+            Xm = lidar_tracks[lidar_index].X;
+            Pm = lidar_tracks[lidar_index].P;
+        }
         for ( int j = 0; j < prev_track_num; ++j ){
-            float rx_ = X[j](0);
-            float ry_ = X[j](1);
-            if (fabs(rx - rx_) < LIDAR_RX_GATE && fabs(ry - ry_) < LIDAR_RY_GATE) // track gate
-            {
-                vector2d z_(rx_, ry_);
-                matrix2d S = H * P[j] * H.transpose() + R;
-                w_ij(i, j) = normalDistributionDensity< 2 >(S, z_, z);
-                // std::cout << "w_ij(i, j) = " << w_ij(i, j) <<std::endl;
+            vector6d X_ = X[j];
+            matrix6d P_ = P[j];
+            if(fabs(Xm(0)- X_(0)) < RX_TRACK_GATE && fabs(Xm(1)- X_(1)) < RY_TRACK_GATE){
+                matrix6d C = Pm + P_;
+                w_ij(i, j) = normalDistributionDensity< 6 >(C, Xm, X_);
+                std::cout << "w_ij(i, j) = " << w_ij(i, j) <<std::endl;
             }else{
                 w_ij(i, j) = 0;
             }
         }
     }
 
-    // weights for initializing new filters
     for ( int j = prev_track_num; j < prev_track_num + src_obj_num; ++j ){
-        w_ij(j - prev_track_num, j) = LIDAR_NEWOBJ_WEIGHT;
+        w_ij(j - prev_track_num, j) = FUSION_NEWOBJ_WEIGHT;
     }
 
     // solve the maximum-sum-of-weights problem (i.e. assignment problem)
@@ -245,10 +306,9 @@ void SensorFusion::MatchGNN(const std::vector<LidarObject>& src)
     // for all found assignments
     for ( const auto & e : assignments )
     {
-        // is assignment an assignment from an already existing filter to a measurement?
-        if ( e.y < prev_track_num )
+        if ( e.y < prev_track_num )  // 与系统航迹关联
         {
-            std::pair<int, int> pair(e.x, e.y);  // (measurement, predict)
+            std::pair<int, int> pair(e.x, e.y);  // (local, global)
             matched_pair.push_back(pair);
             src_matched[e.x] = true;
             prev_matched[e.y] = true;
@@ -256,12 +316,11 @@ void SensorFusion::MatchGNN(const std::vector<LidarObject>& src)
             track_info[e.y].confi_dec = 0;    // target matched, confidence increase
             track_info[e.y].confi_inc++;
             track_info[e.y].confidence += log(track_info[e.y].confi_inc + 1) / log(1.5f);
-            if (track_info[e.y].confidence > LIDAR_MAX_CONFIDENCE) track_info[e.y].confidence = LIDAR_MAX_CONFIDENCE;
+            if (track_info[e.y].confidence > FUSION_MAX_CONFIDENCE) track_info[e.y].confidence = FUSION_MAX_CONFIDENCE;
         }
-        else // is this assignment a measurement that is considered new?
+        else // 生成新航迹
         {
-            // create filter with measurment and keep it
-            InitTrack(src[e.x]);
+            InitTrack(local_matched_pair[e.x]);
         }
     }
 
@@ -281,30 +340,42 @@ void SensorFusion::MatchGNN(const std::vector<LidarObject>& src)
     }
 }
 
-void SensorFusion::Update(const std::vector<LidarObject>& src)
+void SensorFusion::Update(void)
 {
     if(X.size() != P.size()){
-      ROS_ERROR("lidar tracker error: Update state size not equal");
+      ROS_ERROR("fusion tracker error: Update state size not equal");
     }
     
     for (int i=0; i<matched_pair.size(); ++i)    // upgrade matched
     {
         int src_index = matched_pair[i].first;
         int prev_index = matched_pair[i].second;
+        ObjectType type_ = GetCameraType(local_matched_pair[src_index]);
+        if(type_ != UNKNOWN){
+            track_info[prev_index].type = type_;
+        }
+        int radar_index = local_matched_pair[src_index].first;
+        int lidar_index = local_matched_pair[src_index].second;
 
-        float rx_ = X[prev_index](0);
-        float ry_ = X[prev_index](1);
-
-        float rx = src[src_index].rx;
-        float ry = src[src_index].ry;
-
-        vector2d Y(rx-rx_, ry-ry_);
-        matrix2d S = H * P[prev_index] * H.transpose() + R;
-        matrix6_2d K = matrix6_2d::Zero(6,2);
-        K = P[prev_index] * H.transpose() * S.inverse();
-
-        X[prev_index] = X[prev_index] + K * Y;
-        P[prev_index] = (matrix6d::Identity(6,6) - K * H) * P[prev_index];
+        if(radar_index == -1){
+            matrix6d temp_P = (lidar_tracks[lidar_index].P.inverse() + P[prev_index].inverse()).inverse();
+            X[prev_index] = temp_P * (lidar_tracks[lidar_index].P.inverse()*lidar_tracks[lidar_index].X 
+                                      + P[prev_index].inverse()*X[prev_index]);
+            P[prev_index] = temp_P;
+            track_info[prev_index].width = lidar_tracks[lidar_index].width;
+        }else if(lidar_index == -1){
+            matrix6d temp_P = (radar_tracks[radar_index].P.inverse() + P[prev_index].inverse()).inverse();
+            X[prev_index] = temp_P * (radar_tracks[radar_index].P.inverse()*radar_tracks[radar_index].X 
+                                      + P[prev_index].inverse()*X[prev_index]);
+            P[prev_index] = temp_P;
+        }else{
+            matrix6d temp_P=(radar_tracks[radar_index].P.inverse()+ lidar_tracks[lidar_index].P.inverse()+ P[prev_index].inverse()).inverse();
+            X[prev_index] = temp_P * (radar_tracks[radar_index].P.inverse()*radar_tracks[radar_index].X 
+                                      + lidar_tracks[lidar_index].P.inverse()*lidar_tracks[lidar_index].X
+                                      + P[prev_index].inverse()*X[prev_index]);
+            P[prev_index] = temp_P;
+            track_info[prev_index].width = lidar_tracks[lidar_index].width;
+        }
     }
 }
 
@@ -349,10 +420,10 @@ void SensorFusion::PubFusionTracks(void)
     visualization_msgs::Marker bbox_marker;
     bbox_marker.header.frame_id = FIXED_FRAME;
     bbox_marker.header.stamp = time_stamp;
-    bbox_marker.color.r = 0.0f;
-    bbox_marker.color.g = 1.0f;    //lidar color green
+    bbox_marker.color.r = 1.0f;    //fusion color yellow
+    bbox_marker.color.g = 1.0f;
     bbox_marker.color.b = 0.0f;
-    bbox_marker.color.a = 0.5;
+    bbox_marker.color.a = 0.5f;
     bbox_marker.lifetime = ros::Duration();
     bbox_marker.frame_locked = true;
     bbox_marker.type = visualization_msgs::Marker::CUBE;
@@ -362,10 +433,15 @@ void SensorFusion::PubFusionTracks(void)
     int track_num = X.size();
     for (int i=0; i<track_num; ++i)
     {
-        if(track_info[i].confidence < LIDAR_MIN_CONFIDENCE) continue;
+        if(track_info[i].confidence < FUSION_MIN_CONFIDENCE) continue;
         if (!IsConverged(i))  continue;
 
         bbox_marker.id = marker_id++;
+        // switch(track_info[i].type){
+        //     case VEHICLE : bbox_marker.type = visualization_msgs::Marker::CUBE;     break;
+        //     case PED     : bbox_marker.type = visualization_msgs::Marker::CYLINDER; break;
+        //     default      : bbox_marker.type = visualization_msgs::Marker::CUBE;     break;
+        // }
         bbox_marker.pose.position.x = X[i](0);
         bbox_marker.pose.position.y = X[i](1);
         bbox_marker.pose.position.z = -0.9;
@@ -387,5 +463,5 @@ void SensorFusion::PubFusionTracks(void)
         marker_array.markers.push_back(bbox_marker);
     }
     pre_marker_size_ = marker_id;
-    lidar_kf_pub.publish(marker_array);
+    fusion_pub.publish(marker_array);
 }

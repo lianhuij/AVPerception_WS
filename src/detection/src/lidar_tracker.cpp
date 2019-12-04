@@ -2,9 +2,11 @@
 #include <visualization_msgs/Marker.h>
 #include <visualization_msgs/MarkerArray.h>
 #include "detection/lidar_tracker.h"
+#include "detection/sensor_fusion.h"
 
 extern ros::Publisher lidar_kf_pub;
 extern std::string FIXED_FRAME;
+extern SensorFusion fusion_tracker;
 
 LidarTracker::LidarTracker()
 {
@@ -70,6 +72,7 @@ void LidarTracker::KF(const detection::LidarRawArray& input)
     // float duration_ms = (float)(end-start)*1000/(float)CLOCKS_PER_SEC;  //程序用时 ms
     // std::cout << "duration(ms) = " << duration_ms << std::endl;
     PubLidarTracks();
+    fusion_tracker.Run();    //fusion point at lidar received time
 }
 
 void LidarTracker::InitTrack(const LidarObject &obj)
@@ -253,7 +256,7 @@ void LidarTracker::PubLidarTracks()
     bbox_marker.color.r = 0.0f;
     bbox_marker.color.g = 1.0f;    //lidar color green
     bbox_marker.color.b = 0.0f;
-    bbox_marker.color.a = 0.5;
+    bbox_marker.color.a = 0.5f;
     bbox_marker.lifetime = ros::Duration();
     bbox_marker.frame_locked = true;
     bbox_marker.type = visualization_msgs::Marker::CUBE;
@@ -300,6 +303,8 @@ void LidarTracker::GetLidarTrack(std::vector<LocalTrack>& tracks){
     LocalTrack track;
     int size = X.size();
     for(int i=0; i<size; ++i){
+        if(track_info[i].confidence < LIDAR_MIN_CONFIDENCE) continue;
+        if (!IsConverged(i))  continue;
         track.X = X[i];
         track.P = P[i];
         track.width = track_info[i].width;

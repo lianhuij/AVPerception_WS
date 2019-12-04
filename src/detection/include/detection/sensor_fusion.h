@@ -7,9 +7,13 @@
 
 const int FUSION_MIN_CONFIDENCE   = 7;
 const int FUSION_MAX_CONFIDENCE   = 100;
-const float FUSION_NEWOBJ_WEIGHT  = 0.01;
+const float LOCAL_SINGLE_WEIGHT   = 0.001;
+const float FUSION_NEWOBJ_WEIGHT  = 0.1;
+const float CAMERA_TRACK_GATE     = 2.5;
+const float RX_TRACK_GATE         = 1.5;
+const float RY_TRACK_GATE         = 1.0;
 
-class SensorFusion
+class SensorFusion    //fusion at lidar time
 {
 public:
     SensorFusion(void);
@@ -19,11 +23,12 @@ public:
     void GetLocalTracks(void);
     void InitTrack(const std::pair<int, int>& pair);
     void Predict(void);
-    void MatchGNN(const std::vector<LidarObject>& src);
-    void Update(const std::vector<LidarObject>& src);
+    void MatchGNN(void);
+    void Update(void);
     void RemoveTrack(int index);
     bool IsConverged(int track_index);
     void PubFusionTracks(void);
+    ObjectType GetCameraType(const std::pair<int, int>& pair);
 
 private:
     std::vector<vector6d> X;  // rx ry vx vy ax ay
@@ -44,6 +49,7 @@ private:
 
     double ts;
     ros::Time time_stamp;
+    ros::Time prev_stamp;
 };
 
 #endif // DETECTION_SENSOR_FUSION_H

@@ -77,7 +77,7 @@ struct ObjectInfo : Object{
     ObjectInfo(void){
         confi_inc = confi_dec = confidence = 0;
         type  = UNKNOWN;
-        width = 0;
+        width = 0.5;
     }
 };
 
