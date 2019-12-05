@@ -11,16 +11,11 @@
 #include <pcl/segmentation/extract_clusters.h>
 #include <pcl/common/centroid.h>
 #include <pcl/common/common.h>
-#include <pcl/common/transforms.h>
 #include <visualization_msgs/Marker.h>
 #include <visualization_msgs/MarkerArray.h>
 #include <detection/LidarRaw.h>
 #include <detection/LidarRawArray.h>
 #include <detection/object.h>
-#include <cmath>
-#include <time.h>
-#include <vector>
-#include <Eigen/Dense>
 
 const float CLUSTER_TOLERANCE = 0.6;
 const int MIN_CLUSTER_SIZE    = 7;
@@ -65,11 +60,10 @@ public:
 
 void LidarClusterHandler::cluster(const sensor_msgs::PointCloud2ConstPtr& input)
 {
-    clock_t start = clock();
+    // clock_t start = clock();
     pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_raw_ptr  (new pcl::PointCloud<pcl::PointXYZ>);
     pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_roi_ptr (new pcl::PointCloud<pcl::PointXYZ>);
     pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_obstacle_ptr (new pcl::PointCloud<pcl::PointXYZ>);
-    pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_trans_ptr (new pcl::PointCloud<pcl::PointXYZ>);
     pcl::fromROSMsg(*input, *cloud_raw_ptr);
 
 //////////////////////////////遍历输入点云，提取ROI///////////////////////////////
@@ -114,61 +108,32 @@ void LidarClusterHandler::cluster(const sensor_msgs::PointCloud2ConstPtr& input)
     seg.setDistanceThreshold (0.2);
     seg.setInputCloud (cloud_roi_ptr);
     seg.segment (*inliers, *coefficients);
-
     pcl::ExtractIndices<pcl::PointXYZ> extract;
     extract.setInputCloud(cloud_roi_ptr);
     extract.setIndices(inliers);
     extract.setNegative (true);
     extract.filter (*cloud_obstacle_ptr);    //滤除地面得到原始障碍物点云
 
+    sensor_msgs::PointCloud2 pcl_output;
+    pcl::toROSMsg(*cloud_obstacle_ptr, pcl_output);
+    pcl_output.header.frame_id = fixed_frame;
+    pcl_output.header.stamp = input->header.stamp;
+    pc_pub.publish(pcl_output);              //发布原始障碍物点云
+
     detection::LidarRawArray raw_array;
     if(cloud_obstacle_ptr->size() >= MIN_CLUSTER_SIZE){//A
-        vector3d before, after;
-        before(0) = coefficients->values[0];
-        before(1) = coefficients->values[1];
-        before(2) = coefficients->values[2];
-        after(0) = 0.0;
-        after(1) = 0.0;
-        after(2) = 1.0;
-        before.normalize();
-        after.normalize();
-        double angle = acos(before.dot(after));  //旋转角
-        vector3d p_rotate =before.cross(after);  //旋转轴
-        p_rotate.normalize();
-
-        //应用罗德里格旋转公式计算旋转矩阵，校正点云
-        matrix4d rotationMatrix = matrix4d::Identity();
-        rotationMatrix(0, 0) = cos(angle) + p_rotate[0] * p_rotate[0] * (1 - cos(angle));
-        rotationMatrix(0, 1) = p_rotate[0] * p_rotate[1] * (1 - cos(angle)) - p_rotate[2] * sin(angle);
-        rotationMatrix(0, 2) = p_rotate[1] * sin(angle) + p_rotate[0] * p_rotate[2] * (1 - cos(angle));
-    
-        rotationMatrix(1, 0) = p_rotate[2] * sin(angle) + p_rotate[0] * p_rotate[1] * (1 - cos(angle));
-        rotationMatrix(1, 1) = cos(angle) + p_rotate[1] * p_rotate[1] * (1 - cos(angle));
-        rotationMatrix(1, 2) = -p_rotate[0] * sin(angle) + p_rotate[1] * p_rotate[2] * (1 - cos(angle));
-    
-        rotationMatrix(2, 0) = -p_rotate[1] * sin(angle) + p_rotate[0] * p_rotate[2] * (1 - cos(angle));
-        rotationMatrix(2, 1) = p_rotate[0] * sin(angle) + p_rotate[1] * p_rotate[2] * (1 - cos(angle));
-        rotationMatrix(2, 2) = cos(angle) + p_rotate[2] * p_rotate[2] * (1 - cos(angle));
-        pcl::transformPointCloud(*cloud_obstacle_ptr, *cloud_trans_ptr, rotationMatrix);
-
-        sensor_msgs::PointCloud2 pcl_output;
-        pcl::toROSMsg(*cloud_trans_ptr, pcl_output);
-        pcl_output.header.frame_id = fixed_frame;
-        pcl_output.header.stamp = input->header.stamp;
-        pc_pub.publish(pcl_output);
-
         //障碍目标点云聚类 欧氏聚类
         std::vector<pcl::PointIndices> cluster_indices;
         // Creating the KdTree object for the search method of the extraction
         pcl::search::KdTree<pcl::PointXYZ>::Ptr tree (new pcl::search::KdTree<pcl::PointXYZ>);
-        tree->setInputCloud (cloud_trans_ptr);
+        tree->setInputCloud (cloud_obstacle_ptr);
         // ClusterExtraction
         pcl::EuclideanClusterExtraction<pcl::PointXYZ> ec;
         ec.setClusterTolerance (CLUSTER_TOLERANCE);
         ec.setMinClusterSize (MIN_CLUSTER_SIZE);
         ec.setMaxClusterSize (MAX_CLUSTER_SIZE);
         ec.setSearchMethod (tree);
-        ec.setInputCloud (cloud_trans_ptr);
+        ec.setInputCloud (cloud_obstacle_ptr);
         ec.extract (cluster_indices);
 
         detection::LidarRaw raw;
@@ -176,9 +141,9 @@ void LidarClusterHandler::cluster(const sensor_msgs::PointCloud2ConstPtr& input)
         for (std::vector<pcl::PointIndices>::const_iterator it = cluster_indices.begin (); it != cluster_indices.end (); ++it) {
             pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_cluster (new pcl::PointCloud<pcl::PointXYZ>);
             for (std::vector<int>::const_iterator pit = it->indices.begin (); pit != it->indices.end (); pit++) {
-                cloud_cluster->points.push_back (cloud_trans_ptr->points[*pit]);
+                cloud_cluster->points.push_back (cloud_obstacle_ptr->points[*pit]);
             }
-            Eigen::Vector4f centroid;
+            vector4d centroid;
             pcl::PointXYZ minpoint, maxpoint;
             pcl::compute3DCentroid (*cloud_cluster, centroid);
             pcl::getMinMax3D (*cloud_cluster, minpoint, maxpoint);
@@ -219,9 +184,9 @@ void LidarClusterHandler::cluster(const sensor_msgs::PointCloud2ConstPtr& input)
     marker.color.a = 0.7;
     marker.lifetime = ros::Duration();
     ego_pub.publish(marker);  //发布自车几何形状
-    clock_t end = clock();
-    float duration_ms = (float)(end-start)*1000/(float)CLOCKS_PER_SEC;  //程序用时 ms
-    std::cout << "duration(ms) = " << duration_ms << std::endl;
+    // clock_t end = clock();
+    // float duration_ms = (float)(end-start)*1000/(float)CLOCKS_PER_SEC;  //程序用时 ms
+    // std::cout << "duration(ms) = " << duration_ms << std::endl;
 }
 
 void LidarClusterHandler::PublidarPed(const detection::LidarRawArray& raw_array){
