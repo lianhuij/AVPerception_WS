@@ -35,9 +35,9 @@ SensorFusion::SensorFusion(void)
     F(2,2) = 1;          F(3,3) = 1;
     F(4,4) = 1;          F(5,5) = 1;
     Q = matrix6d::Zero(6,6);
-    Q(0,0) = 0.0005;     Q(1,1) = 0.0005;
-    Q(2,2) = 0.01;       Q(3,3) = 0.01;
-    Q(4,4) = 0.05;       Q(5,5) = 0.05;
+    Q(0,0) = 0.001;     Q(1,1) = 0.001;
+    Q(2,2) = 0.05;      Q(3,3) = 0.05;
+    Q(4,4) = 0.1;       Q(5,5) = 0.1;
 }
 
 SensorFusion::~SensorFusion(void) { }
@@ -91,6 +91,7 @@ void SensorFusion::GetLocalTracks(void){
         it->X(0) += X_OFFSET;
         it->P = F * it->P * F.transpose() + Qr;
     }
+    // std::cout << "radar dt = " << dt*1000 <<std::endl;
 
     //对齐camera信息
     dt = (time_stamp - camera_stamp).toSec();
@@ -121,6 +122,7 @@ void SensorFusion::GetLocalTracks(void){
     }else if(radar_track_num == 0 && lidar_track_num == 0){
         return;
     }
+    // std::cout << "radar_track_num = " << radar_track_num << "  lidar_track_num = " << lidar_track_num<< std::endl;
     
     radar_matched.clear();
     radar_matched.resize(radar_track_num, false);
@@ -141,6 +143,7 @@ void SensorFusion::GetLocalTracks(void){
                 // std::cout << "w_ij(i, j) = " << w_ij(i, j) <<std::endl;
             }else{
                 w_ij(i, j) = 0;
+                // std::cout << "fabs(Xr(0)- Xl(0)) = " << fabs(Xr(0)- Xl(0)) <<"  fabs(Xr(1)- Xl(1)) = " << fabs(Xr(1)- Xl(1))<< std::endl;
             }
         }
     }
@@ -287,7 +290,7 @@ void SensorFusion::MatchGNN(void)
             if(fabs(Xm(0)- X_(0)) < RX_TRACK_GATE && fabs(Xm(1)- X_(1)) < RY_TRACK_GATE){
                 matrix6d C = Pm + P_;
                 w_ij(i, j) = normalDistributionDensity< 6 >(C, Xm, X_);
-                std::cout << "w_ij(i, j) = " << w_ij(i, j) <<std::endl;
+                // std::cout << "w_ij(i, j) = " << w_ij(i, j) <<std::endl;
             }else{
                 w_ij(i, j) = 0;
             }

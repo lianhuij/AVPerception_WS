@@ -11,23 +11,23 @@
 #include <pcl/segmentation/extract_clusters.h>
 #include <pcl/common/centroid.h>
 #include <pcl/common/common.h>
+#include <pcl/common/transforms.h>
 #include <visualization_msgs/Marker.h>
 #include <visualization_msgs/MarkerArray.h>
 #include <detection/LidarRaw.h>
 #include <detection/LidarRawArray.h>
-#include "detection/dbscan.h"
+#include <detection/object.h>
 #include <cmath>
 #include <time.h>
 #include <vector>
+#include <Eigen/Dense>
 
-// const float LIDAR_EPS  = 0.5;
-// const int LIDAR_MINPTS = 6;
 const float CLUSTER_TOLERANCE = 0.6;
 const int MIN_CLUSTER_SIZE    = 7;
 const int MAX_CLUSTER_SIZE    = 400;
 const float OBJECT_MIN_WIDTH  = 0.5;
 
-///////////////////////激光雷达点云目标聚类处理类////////////////////////
+////////////////////////激光雷达点云目标聚类处理类////////////////////////
 class LidarClusterHandler
 {
 protected:
@@ -36,19 +36,27 @@ protected:
     ros::Publisher pc_pub;
     ros::Publisher lidar_rviz_pub;
     ros::Publisher lidar_rawArray_pub;
+    ros::Publisher ego_pub;
     std::string fixed_frame;
-    float ROI_width;
+    float ROI_width;          //感兴趣区域宽度
+    float ROI_length;         //感兴趣区域长度
+    float cut_x;              //裁剪近处自车点x范围
+    float cut_y;              //裁剪近处自车点y范围
 
 public:
     LidarClusterHandler()
     {
-        pc_sub   = nh.subscribe("cali_pc", 1, &LidarClusterHandler::cluster, this);  //接收话题：cali_pc
-        pc_pub   = nh.advertise<sensor_msgs::PointCloud2>("no_ground_pc", 1);        //发布话题：no_ground_pc
+        pc_sub   = nh.subscribe("velodyne_points", 1, &LidarClusterHandler::cluster, this);  //接收话题：velodyne_points
+        pc_pub   = nh.advertise<sensor_msgs::PointCloud2>("no_ground_pc", 1);                //发布话题：no_ground_pc
         lidar_rviz_pub = nh.advertise<visualization_msgs::MarkerArray>("lidar_raw_rviz", 10);
         lidar_rawArray_pub = nh.advertise<detection::LidarRawArray>("lidar_rawArray", 10);
+        ego_pub = nh.advertise<visualization_msgs::Marker>("ego_car", 1);
 
         nh.getParam("/lidar_cluster_node/fixed_frame", fixed_frame);
         nh.getParam("/lidar_cluster_node/ROI_width", ROI_width);
+        nh.getParam("/lidar_cluster_node/ROI_length", ROI_length);
+        nh.getParam("/lidar_cluster_node/cut_x", cut_x);
+        nh.getParam("/lidar_cluster_node/cut_y", cut_y);
     }
     ~LidarClusterHandler(){ }
     void cluster(const sensor_msgs::PointCloud2ConstPtr& input);
@@ -57,33 +65,53 @@ public:
 
 void LidarClusterHandler::cluster(const sensor_msgs::PointCloud2ConstPtr& input)
 {
-    // clock_t start = clock();
+    clock_t start = clock();
     pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_raw_ptr  (new pcl::PointCloud<pcl::PointXYZ>);
     pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_roi_ptr (new pcl::PointCloud<pcl::PointXYZ>);
     pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_obstacle_ptr (new pcl::PointCloud<pcl::PointXYZ>);
-
+    pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_trans_ptr (new pcl::PointCloud<pcl::PointXYZ>);
     pcl::fromROSMsg(*input, *cloud_raw_ptr);
 
 //////////////////////////////遍历输入点云，提取ROI///////////////////////////////
     for (int m=0; m<cloud_raw_ptr->size(); ++m)   
     {
+        if(cloud_raw_ptr->points[m].x < 0)   
+        {
+            continue;  //所有后部的点在栅格地图中排除
+        }
+
+        if(cloud_raw_ptr->points[m].z > 0)   
+        {
+            continue;  //所有高于车辆高度的点在栅格地图中排除
+        }
+        
+        if(cloud_raw_ptr->points[m].x > -cut_x && cloud_raw_ptr->points[m].x < cut_x
+           && cloud_raw_ptr->points[m].y > -cut_y && cloud_raw_ptr->points[m].y < cut_y)
+        {
+            continue;  //裁剪近处自车点
+        }
+        
+        if(cloud_raw_ptr->points[m].x > ROI_length)
+        {
+            continue;  //排除x坐标大于感兴趣区域外的数据
+        }
+        
         if(cloud_raw_ptr->points[m].y > ROI_width || cloud_raw_ptr->points[m].y < -ROI_width)
         {
-            continue;
+            continue;  //排除y坐标绝对值大于感兴趣宽度外的数据
         }
-        cloud_roi_ptr->points.push_back(cloud_raw_ptr->points[m]);
+        cloud_roi_ptr->points.push_back(cloud_raw_ptr->points[m]);  //提取感兴趣区域点云
     }
 
-    //应用随机采样一致性算法滤除地面点云
+    //应用随机采样一致性算法得到原始地面法向量,并滤除地面点云
     pcl::ModelCoefficients::Ptr coefficients (new pcl::ModelCoefficients());
     pcl::PointIndices::Ptr inliers (new pcl::PointIndices());
-
     pcl::SACSegmentation<pcl::PointXYZ> seg;
     seg.setModelType (pcl::SACMODEL_PLANE);
     seg.setMethodType (pcl::SAC_RANSAC);
     seg.setOptimizeCoefficients (true);
     seg.setMaxIterations(500);
-    seg.setDistanceThreshold (0.15);
+    seg.setDistanceThreshold (0.2);
     seg.setInputCloud (cloud_roi_ptr);
     seg.segment (*inliers, *coefficients);
 
@@ -91,52 +119,56 @@ void LidarClusterHandler::cluster(const sensor_msgs::PointCloud2ConstPtr& input)
     extract.setInputCloud(cloud_roi_ptr);
     extract.setIndices(inliers);
     extract.setNegative (true);
-    extract.filter (*cloud_obstacle_ptr);
+    extract.filter (*cloud_obstacle_ptr);    //滤除地面得到原始障碍物点云
 
-    sensor_msgs::PointCloud2 pcl_output;
-    pcl::toROSMsg(*cloud_obstacle_ptr, pcl_output);
-    pcl_output.header.frame_id = fixed_frame;
-    pcl_output.header.stamp = input->header.stamp;
-    pc_pub.publish(pcl_output);
-
-    // //障碍目标点云聚类 DBSCAN
-    // std::vector<Point> vec_pts;
-    // for (int i=0; i<cloud_obstacle_ptr->size(); ++i){
-    //     vec_pts.push_back({cloud_obstacle_ptr->points[i].x, cloud_obstacle_ptr->points[i].y, 0, NOT_CLASSIFIED});
-    // }
-    // DBSCAN dbScan(LIDAR_EPS, LIDAR_MINPTS, vec_pts);    //原始目标聚类
-    // dbScan.run();
-    // std::vector<std::vector<int> > idx = dbScan.getCluster();
-    // detection::LidarRawArray raw_array;
-    // detection::LidarRaw raw;
-    // for(int i=0; i<idx.size(); ++i){
-    //     raw.x = raw.y = 0;
-    //     int size = idx[i].size();
-    //     for(int j=0; j<size; ++j){
-    //         raw.x += cloud_obstacle_ptr->points[idx[i][j]].x;
-    //         raw.y += cloud_obstacle_ptr->points[idx[i][j]].y;
-    //     }
-    //     raw.x /= size;
-    //     raw.y /= size;
-    //     if(i >= 15) ROS_ERROR("lidar raw num > 15");
-    //     raw_array.data[i] = raw;
-    //     raw_array.num = i+1;
-    // }
-
-    //障碍目标点云聚类 欧氏聚类
     detection::LidarRawArray raw_array;
-    if(cloud_obstacle_ptr->size() > 0){
+    if(cloud_obstacle_ptr->size() >= MIN_CLUSTER_SIZE){//A
+        vector3d before, after;
+        before(0) = coefficients->values[0];
+        before(1) = coefficients->values[1];
+        before(2) = coefficients->values[2];
+        after(0) = 0.0;
+        after(1) = 0.0;
+        after(2) = 1.0;
+        before.normalize();
+        after.normalize();
+        double angle = acos(before.dot(after));  //旋转角
+        vector3d p_rotate =before.cross(after);  //旋转轴
+        p_rotate.normalize();
+
+        //应用罗德里格旋转公式计算旋转矩阵，校正点云
+        matrix4d rotationMatrix = matrix4d::Identity();
+        rotationMatrix(0, 0) = cos(angle) + p_rotate[0] * p_rotate[0] * (1 - cos(angle));
+        rotationMatrix(0, 1) = p_rotate[0] * p_rotate[1] * (1 - cos(angle)) - p_rotate[2] * sin(angle);
+        rotationMatrix(0, 2) = p_rotate[1] * sin(angle) + p_rotate[0] * p_rotate[2] * (1 - cos(angle));
+    
+        rotationMatrix(1, 0) = p_rotate[2] * sin(angle) + p_rotate[0] * p_rotate[1] * (1 - cos(angle));
+        rotationMatrix(1, 1) = cos(angle) + p_rotate[1] * p_rotate[1] * (1 - cos(angle));
+        rotationMatrix(1, 2) = -p_rotate[0] * sin(angle) + p_rotate[1] * p_rotate[2] * (1 - cos(angle));
+    
+        rotationMatrix(2, 0) = -p_rotate[1] * sin(angle) + p_rotate[0] * p_rotate[2] * (1 - cos(angle));
+        rotationMatrix(2, 1) = p_rotate[0] * sin(angle) + p_rotate[1] * p_rotate[2] * (1 - cos(angle));
+        rotationMatrix(2, 2) = cos(angle) + p_rotate[2] * p_rotate[2] * (1 - cos(angle));
+        pcl::transformPointCloud(*cloud_obstacle_ptr, *cloud_trans_ptr, rotationMatrix);
+
+        sensor_msgs::PointCloud2 pcl_output;
+        pcl::toROSMsg(*cloud_trans_ptr, pcl_output);
+        pcl_output.header.frame_id = fixed_frame;
+        pcl_output.header.stamp = input->header.stamp;
+        pc_pub.publish(pcl_output);
+
+        //障碍目标点云聚类 欧氏聚类
         std::vector<pcl::PointIndices> cluster_indices;
         // Creating the KdTree object for the search method of the extraction
         pcl::search::KdTree<pcl::PointXYZ>::Ptr tree (new pcl::search::KdTree<pcl::PointXYZ>);
-        tree->setInputCloud (cloud_obstacle_ptr);
+        tree->setInputCloud (cloud_trans_ptr);
         // ClusterExtraction
         pcl::EuclideanClusterExtraction<pcl::PointXYZ> ec;
         ec.setClusterTolerance (CLUSTER_TOLERANCE);
         ec.setMinClusterSize (MIN_CLUSTER_SIZE);
         ec.setMaxClusterSize (MAX_CLUSTER_SIZE);
         ec.setSearchMethod (tree);
-        ec.setInputCloud (cloud_obstacle_ptr);
+        ec.setInputCloud (cloud_trans_ptr);
         ec.extract (cluster_indices);
 
         detection::LidarRaw raw;
@@ -144,7 +176,7 @@ void LidarClusterHandler::cluster(const sensor_msgs::PointCloud2ConstPtr& input)
         for (std::vector<pcl::PointIndices>::const_iterator it = cluster_indices.begin (); it != cluster_indices.end (); ++it) {
             pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_cluster (new pcl::PointCloud<pcl::PointXYZ>);
             for (std::vector<int>::const_iterator pit = it->indices.begin (); pit != it->indices.end (); pit++) {
-                cloud_cluster->points.push_back (cloud_obstacle_ptr->points[*pit]);
+                cloud_cluster->points.push_back (cloud_trans_ptr->points[*pit]);
             }
             Eigen::Vector4f centroid;
             pcl::PointXYZ minpoint, maxpoint;
@@ -158,16 +190,38 @@ void LidarClusterHandler::cluster(const sensor_msgs::PointCloud2ConstPtr& input)
             raw_array.data[mark++] = raw;
             raw_array.num = mark;
         }
-
-    }else{
+    }//A
+    else{
         raw_array.num = 0;
     }
     raw_array.header.stamp = input->header.stamp;
-    // clock_t end = clock();
-    // float duration_ms = (float)(end-start)*1000/(float)CLOCKS_PER_SEC;  //程序用时 ms
-    // std::cout << "duration(ms) = " << duration_ms << std::endl;
     lidar_rawArray_pub.publish(raw_array);
     PublidarPed(raw_array);
+
+    visualization_msgs::Marker marker;
+    marker.header.frame_id = fixed_frame;
+    marker.header.stamp = input->header.stamp;
+    marker.type = visualization_msgs::Marker::CUBE;
+    marker.action = visualization_msgs::Marker::ADD;
+    marker.pose.position.x = 0;
+    marker.pose.position.y = 0;
+    marker.pose.position.z = -0.9;
+    marker.pose.orientation.x = 0.0;
+    marker.pose.orientation.y = 0.0;
+    marker.pose.orientation.z = 0.0;
+    marker.pose.orientation.w = 1.0;
+    marker.scale.x = 3;
+    marker.scale.y = 1.6;
+    marker.scale.z = 1.6;
+    marker.color.r = 0;
+    marker.color.g = 0;
+    marker.color.b = 0.7;
+    marker.color.a = 0.7;
+    marker.lifetime = ros::Duration();
+    ego_pub.publish(marker);  //发布自车几何形状
+    clock_t end = clock();
+    float duration_ms = (float)(end-start)*1000/(float)CLOCKS_PER_SEC;  //程序用时 ms
+    std::cout << "duration(ms) = " << duration_ms << std::endl;
 }
 
 void LidarClusterHandler::PublidarPed(const detection::LidarRawArray& raw_array){
@@ -218,10 +272,7 @@ void LidarClusterHandler::PublidarPed(const detection::LidarRawArray& raw_array)
 int main(int argc,char** argv)
 {
     ros::init(argc,argv,"lidar_cluster_node");
-
     LidarClusterHandler handler;
-        
     ros::spin();
-
     return 0;
 }

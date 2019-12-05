@@ -5,7 +5,7 @@
 #include "detection/object.h"
 #include "detection/GNN.h"
 
-const int FUSION_MIN_CONFIDENCE   = 7;
+const int FUSION_MIN_CONFIDENCE   = 4;
 const int FUSION_MAX_CONFIDENCE   = 100;
 const float LOCAL_SINGLE_WEIGHT   = 0.001;
 const float FUSION_NEWOBJ_WEIGHT  = 0.1;

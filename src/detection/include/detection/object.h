@@ -11,9 +11,11 @@
 
 typedef typename Eigen::Matrix<double,2,1> vector2d;
 typedef typename Eigen::Matrix<double,3,1> vector3d;
+typedef typename Eigen::Matrix<double,4,1> vector4d;
 typedef typename Eigen::Matrix<double,6,1> vector6d;
 typedef typename Eigen::Matrix<double,2,2> matrix2d;
 typedef typename Eigen::Matrix<double,3,3> matrix3d;
+typedef typename Eigen::Matrix<double,4,4> matrix4d;
 typedef typename Eigen::Matrix<double,6,6> matrix6d;
 typedef typename Eigen::Matrix<double,1,2> matrix1_2d;
 typedef typename Eigen::Matrix<double,2,6> matrix2_6d;
