@@ -235,11 +235,3 @@ add_dependencies(azimuth_calibration ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catki
 target_link_libraries(azimuth_calibration
   ${catkin_LIBRARIES}
 )
-
-add_executable(MPC_data
-  src/MPC_data.cpp
-)
-add_dependencies(MPC_data ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-target_link_libraries(MPC_data
-  ${catkin_LIBRARIES}
-)

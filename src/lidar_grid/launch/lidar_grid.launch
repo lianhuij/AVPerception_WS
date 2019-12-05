@@ -28,8 +28,6 @@
   <arg name="ground_z" default="-1.8" />
   <!--最大坡度阈值-->
   <arg name="max_gradient" default="0.15" />
-  <!--radar x方向偏移量-->
-  <arg name="x_offset" default="1.6" />
 
   <!--连接VLP16-->
   <include file="$(find velodyne_pointcloud)/launch/VLP16_points.launch" />
@@ -74,14 +72,7 @@
     <param name="y_width" value="$(arg y_width)" />
     <param name="x_forward" value="$(arg x_forward)" />
     <param name="x_backward" value="$(arg x_backward)" />
-  </node>  
-
-  <!--接收MPC单片机CAN消息-->
-  <node pkg="socketcan_bridge" type="socketcan_to_topic_node" name="socketcan_to_topic_node" />
-  <node pkg="lidar_grid" type="MPC_data" name="MPC_data" >
-    <param name="fixed_frame" value="$(arg fixed_frame)" />
-    <param name="x_offset" value="$(arg x_offset)" />
-  </node>
+  </node> 
 
   <!--rviz可视化-->
   <node pkg="rviz" type="rviz" name="rviz" />   

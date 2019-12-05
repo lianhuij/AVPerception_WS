@@ -11,7 +11,7 @@
   <!--输出栅格大小-->
   <arg name="grid_size" default="0.2" />
   <!--地面点阈值-->
-  <arg name="threshold" default="0.1" />
+  <arg name="threshold" default="0.15" />
   <!--可通行域裁剪宽度-->
   <arg name="cut_width" default="1.7" />
   <!--裁剪近处自车点x范围-->
@@ -27,9 +27,7 @@
   <!--自车位置地面z坐标值-->
   <arg name="ground_z" default="-1.8" />
   <!--最大坡度阈值-->
-  <arg name="max_gradient" default="0.15" />
-  <!--radar x方向偏移量-->
-  <arg name="x_offset" default="1.6" />
+  <arg name="max_gradient" default="0.17" />
   
   <!--读单帧pcd文件>
   <node pkg="lidar_grid" type="pcd_read" name="pcd_read" >
@@ -83,16 +81,10 @@
     <param name="x_backward" value="$(arg x_backward)" />
   </node>  
 
-  <!--接收MPC单片机CAN消息-->
-  <node pkg="lidar_grid" type="MPC_data" name="MPC_data" >
-    <param name="fixed_frame" value="$(arg fixed_frame)" />
-    <param name="x_offset" value="$(arg x_offset)" />
-  </node>
-
   <!--rviz可视化-->
   <node pkg="rviz" type="rviz" name="rviz" />   
 
   <!--rqt_plot查看程序耗时-->
-  <node pkg="rqt_plot" type="rqt_plot" name="plot1" />
+  <node pkg="rqt_plot" type="rqt_plot" name="rqt_plot" />
 
 </launch>

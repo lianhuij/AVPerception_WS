@@ -17,10 +17,8 @@
 class Grid
 {
 public:
-    Grid() : grid_cloud_ptr(new pcl::PointCloud<pcl::PointXYZ>)
-    {
-
-    }
+    Grid(void) : grid_cloud_ptr(new pcl::PointCloud<pcl::PointXYZ>) { }
+    ~Grid() { }
     pcl::PointCloud<pcl::PointXYZ>::Ptr grid_cloud_ptr;
 };
 
@@ -45,7 +43,7 @@ protected:
     float cut_y;              //裁剪近处自车点y范围
 
 public:
-    LidarCloudHandler()
+    LidarCloudHandler(void)
     {
         pc_sub = nh.subscribe("velodyne_points", 1, &LidarCloudHandler::calibration, this);   //接收话题：velodyne_points
         pc_pub = nh.advertise<sensor_msgs::PointCloud2>("cali_pc", 1);                        //发布话题：cali_pc
@@ -63,7 +61,7 @@ public:
         grid_size_th = 2*M_PI/TH;
         radius = R*grid_size_r;
     }
-
+    ~LidarCloudHandler() { }
     void calibration(const sensor_msgs::PointCloud2ConstPtr& input);
 };
 
@@ -71,12 +69,10 @@ public:
 void LidarCloudHandler::calibration(const sensor_msgs::PointCloud2ConstPtr& input)
 {
     clock_t start = clock();
-
     pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_raw_ptr  (new pcl::PointCloud<pcl::PointXYZ>);
     pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_reduce_ptr  (new pcl::PointCloud<pcl::PointXYZ>);
     pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_temp_ptr (new pcl::PointCloud<pcl::PointXYZ>);
     pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_trans_ptr (new pcl::PointCloud<pcl::PointXYZ>);
-
     pcl::fromROSMsg(*input, *cloud_raw_ptr);
 
     Grid grid[R][TH];      //建立极坐标栅格地图grid
@@ -188,7 +184,6 @@ void LidarCloudHandler::calibration(const sensor_msgs::PointCloud2ConstPtr& inpu
     after(1) = 0;
     after(2) = 1;
     before.normalize();
-    after.normalize();
     float angle = acos(before.dot(after));            //旋转角
     Eigen::Vector3f p_rotate =before.cross(after);    //旋转轴
     p_rotate.normalize();
@@ -206,7 +201,6 @@ void LidarCloudHandler::calibration(const sensor_msgs::PointCloud2ConstPtr& inpu
     rotationMatrix(2, 0) = -p_rotate[1] * sin(angle) + p_rotate[0] * p_rotate[2] * (1 - cos(angle));
     rotationMatrix(2, 1) = p_rotate[0] * sin(angle) + p_rotate[1] * p_rotate[2] * (1 - cos(angle));
     rotationMatrix(2, 2) = cos(angle) + p_rotate[2] * p_rotate[2] * (1 - cos(angle));
-
     pcl::transformPointCloud(*cloud_reduce_ptr, *cloud_trans_ptr, rotationMatrix);
 
     sensor_msgs::PointCloud2 pcl_output;
@@ -236,7 +230,6 @@ void LidarCloudHandler::calibration(const sensor_msgs::PointCloud2ConstPtr& inpu
     marker.color.a = 0.7;
     marker.lifetime = ros::Duration();
     ego_pub.publish(marker);  //发布自车几何形状
-
     clock_t end = clock();
     std_msgs::Float32 cali_time;
     cali_time.data = (float)(end-start)*1000/(float)CLOCKS_PER_SEC;  //程序用时 ms
@@ -247,10 +240,7 @@ void LidarCloudHandler::calibration(const sensor_msgs::PointCloud2ConstPtr& inpu
 int main(int argc,char** argv)
 {
     ros::init(argc,argv,"lidar_calibration");
-
     LidarCloudHandler handler;
-        
     ros::spin();
-
     return 0;
 }
