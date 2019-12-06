@@ -10,7 +10,7 @@
 #include <vector>
 #include <cmath>
 
-MPCDataHandler::MPCDataHandler(){
+MPCDataHandler::MPCDataHandler(void){
     can_sub = nh.subscribe("received_messages", 20, &MPCDataHandler::canHandler, this);    //接收话题：received_messages
     radar_raw_pub = nh.advertise<visualization_msgs::MarkerArray>("radar_raw_rviz", 10);   //发布话题：radar_raw_rviz
     cam_raw_pub = nh.advertise<visualization_msgs::MarkerArray>("camera_raw_rviz", 10);    //发布话题：camera_raw_rviz
@@ -29,8 +29,6 @@ void MPCDataHandler::canHandler(const can_msgs::Frame& input)
     static int cam_num;
     static bool radar_head = true;
     static bool cam_head = true;
-    static ros::Time radar_stamp;
-    static ros::Time cam_stamp;
 
 //////////////////////////////解析CAN消息 ESR///////////////////////////////
     if(input.id == 0x550){
@@ -41,7 +39,7 @@ void MPCDataHandler::canHandler(const can_msgs::Frame& input)
             std::vector<raw_data::RadarRaw>().swap(radarRaw);  //清除元素并回收内存
         }else{
             std::vector<raw_data::RadarRaw> no_radar_obj;
-            pubRadarRaw(no_radar_obj, radar_stamp);
+            pubRadarRaw(no_radar_obj);
         }
         return;
     }
@@ -72,7 +70,7 @@ void MPCDataHandler::canHandler(const can_msgs::Frame& input)
         radarRaw.push_back(radar_pos);
         radar_num--;
         if(radar_num == 0){   //接收完本周期数据
-            pubRadarRaw(radarRaw, radar_stamp);
+            pubRadarRaw(radarRaw);
             radar_head = true;
         }
         return;
@@ -87,7 +85,7 @@ void MPCDataHandler::canHandler(const can_msgs::Frame& input)
             std::vector<raw_data::CameraRaw>().swap(camRaw);  //清除元素并回收内存
         }else{
             std::vector<raw_data::CameraRaw> no_cam_obj;
-            pubCamRaw(no_cam_obj, cam_stamp);
+            pubCamRaw(no_cam_obj);
         }
         return;
     }
@@ -118,7 +116,7 @@ void MPCDataHandler::canHandler(const can_msgs::Frame& input)
         camRaw.push_back(cam_pos);
         cam_num--;
         if(cam_num == 0){   //接收完本周期数据
-            pubCamRaw(camRaw, cam_stamp);
+            pubCamRaw(camRaw);
             cam_head = true;
         }
         return;
@@ -126,7 +124,7 @@ void MPCDataHandler::canHandler(const can_msgs::Frame& input)
 }
 
 //////////////////////////发布radar MarkerArray///////////////////////////
-void MPCDataHandler::pubRadarRaw(const std::vector<raw_data::RadarRaw>& input, const ros::Time& radar_stamp){
+void MPCDataHandler::pubRadarRaw(const std::vector<raw_data::RadarRaw>& input){
     
     static int pre_marker_size_ = 0;
     raw_data::RadarRawArray raw_array;
@@ -137,7 +135,7 @@ void MPCDataHandler::pubRadarRaw(const std::vector<raw_data::RadarRaw>& input, c
     bbox_marker.color.r = 1.0f;    //radar color red
     bbox_marker.color.g = 0.0f;
     bbox_marker.color.b = 0.0f;
-    bbox_marker.color.a = 0.5;
+    bbox_marker.color.a = 0.5f;
     bbox_marker.lifetime = ros::Duration();
     bbox_marker.frame_locked = true;
     bbox_marker.type = visualization_msgs::Marker::CUBE;
@@ -183,7 +181,7 @@ void MPCDataHandler::pubRadarRaw(const std::vector<raw_data::RadarRaw>& input, c
 }
 
 //////////////////////////发布camera MarkerArray///////////////////////////
-void MPCDataHandler::pubCamRaw(const std::vector<raw_data::CameraRaw>& input, const ros::Time& cam_stamp){
+void MPCDataHandler::pubCamRaw(const std::vector<raw_data::CameraRaw>& input){
     
     static int pre_marker_size_ = 0;
     raw_data::CameraRawArray raw_array;
@@ -194,7 +192,7 @@ void MPCDataHandler::pubCamRaw(const std::vector<raw_data::CameraRaw>& input, co
     bbox_marker.color.r = 0.0f;
     bbox_marker.color.g = 0.0f;
     bbox_marker.color.b = 1.0f;    //camera color blue
-    bbox_marker.color.a = 0.5;
+    bbox_marker.color.a = 0.5f;
     bbox_marker.lifetime = ros::Duration();
     bbox_marker.frame_locked = true;
     bbox_marker.type = visualization_msgs::Marker::CUBE;

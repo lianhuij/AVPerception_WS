@@ -15,11 +15,12 @@ protected:
     ros::Subscriber can_sub;
     ros::Publisher radar_raw_pub;
     ros::Publisher radar_rawArray_pub;
+    ros::Time radar_stamp;
     std::string fixed_frame;
     std::vector<raw_data::RearRadarRaw> radarRaw;
 
 public:
-    rearDataHandler();
+    rearDataHandler(void);
     ~rearDataHandler();
     void canHandler(const can_msgs::Frame& input);
     void pubRadarRaw(const std::vector<raw_data::RearRadarRaw>& input);

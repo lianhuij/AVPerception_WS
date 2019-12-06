@@ -10,7 +10,7 @@
   </node>
 
   <!--rviz可视化-->
-  <node pkg="rviz" type="rviz" name="rviz" />   
+  <node pkg="rviz" type="rviz" name="rviz" args="-d $(find raw_data)/rviz/raw_data.rviz" required="true"/>   
 
   <!--rqt_plot显示曲线-->
   <node pkg="rqt_plot" type="rqt_plot" name="rqt_plot" />
