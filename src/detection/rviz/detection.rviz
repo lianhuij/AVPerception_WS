@@ -57,8 +57,8 @@ Visualization Manager:
       Queue Size: 10
       Selectable: true
       Size (Pixels): 3
-      Size (m): 0.00999999978
-      Style: Points
+      Size (m): 0.0500000007
+      Style: Spheres
       Topic: /velodyne_points
       Unreliable: false
       Use Fixed Frame: true
