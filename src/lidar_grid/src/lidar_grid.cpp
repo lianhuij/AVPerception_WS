@@ -97,12 +97,7 @@ void LidarCloudHandler::rasterization(const sensor_msgs::PointCloud2ConstPtr& in
     for (int m=0; m<cloud_raw_ptr->size(); ++m)   
     {
         r = sqrt(cloud_raw_ptr->points[m].x * cloud_raw_ptr->points[m].x
-                 + cloud_raw_ptr->points[m].y * cloud_raw_ptr->points[m].y);  //XY平面内，点到原点的距离              
-
-        if(r > radius)
-        {
-            continue;   //不考虑地图半径外的点    
-        }
+                 + cloud_raw_ptr->points[m].y * cloud_raw_ptr->points[m].y);  //XY平面内，点到原点的距离
 
         th = acos(cloud_raw_ptr->points[m].x/r);//点对应的向量的角度（以x轴正方向为零角度）
     

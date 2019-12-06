@@ -49,6 +49,8 @@
     <param name="threshold" value="$(arg threshold)" />
     <param name="cut_x" value="$(arg cut_x)" />
     <param name="cut_y" value="$(arg cut_y)" />
+    <param name="y_width" value="$(arg y_width)" />
+    <param name="x_forward" value="$(arg x_forward)" />
   </node>
   
   <!--处理点云输出可通行栅格，RANSAC方法>
@@ -82,7 +84,7 @@
   </node>  
 
   <!--rviz可视化-->
-  <node pkg="rviz" type="rviz" name="rviz" />   
+  <node pkg="rviz" type="rviz" name="rviz" args="-d $(find lidar_grid)/rviz/lidar_grid.rviz" required="true"/>   
 
   <!--rqt_plot查看程序耗时-->
   <node pkg="rqt_plot" type="rqt_plot" name="rqt_plot" />

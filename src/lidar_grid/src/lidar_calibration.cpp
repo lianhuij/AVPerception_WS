@@ -36,11 +36,12 @@ protected:
     int TH;                   //角度上的分割数
     float grid_size_r;        //半径上的分辨率
     float grid_size_th;       //角度上的分辨率
-    float radius;             //半径
     float grid_size;          //输出栅格大小
     double threshold;         //地面点阈值
     float cut_x;              //裁剪近处自车点x范围
     float cut_y;              //裁剪近处自车点y范围
+    int y_width;              //输出栅格地图一侧宽度
+    int x_forward;            //输出栅格地图前向长度
 
 public:
     LidarCloudHandler(void)
@@ -58,8 +59,9 @@ public:
         nh.getParam("/lidar_calibration/threshold", threshold);
         nh.getParam("/lidar_calibration/cut_x", cut_x);
         nh.getParam("/lidar_calibration/cut_y", cut_y);
+        nh.getParam("/lidar_calibration/y_width", y_width);
+        nh.getParam("/lidar_calibration/x_forward", x_forward);
         grid_size_th = 2*M_PI/TH;
-        radius = R*grid_size_r;
     }
     ~LidarCloudHandler() { }
     void calibration(const sensor_msgs::PointCloud2ConstPtr& input);
@@ -98,44 +100,29 @@ void LidarCloudHandler::calibration(const sensor_msgs::PointCloud2ConstPtr& inpu
             continue;  //裁剪近处自车点
         }
         
-        if(cloud_raw_ptr->points[m].x > radius || cloud_raw_ptr->points[m].x < -radius)
+        if(cloud_raw_ptr->points[m].x > x_forward*grid_size)
         {
-            continue;  //排除x坐标绝对值大于半径的数据
+            continue;  //排除x坐标大于感兴趣区域的数据
         }
 
-        if(cloud_raw_ptr->points[m].y > radius || cloud_raw_ptr->points[m].y < -radius)
+        if(cloud_raw_ptr->points[m].y > y_width*grid_size || cloud_raw_ptr->points[m].y < -y_width*grid_size)
         {
-            continue;  //排除y坐标绝对值大于半径的数据
+            continue;  //排除y坐标绝对值大于感兴趣区域的数据
         }
         
         r = sqrt(cloud_raw_ptr->points[m].x * cloud_raw_ptr->points[m].x
-                + cloud_raw_ptr->points[m].y * cloud_raw_ptr->points[m].y);  //XY平面内，点到原点的距离              
-
-        if(r > radius)
-        {
-            continue;   //不考虑地图半径外的点    
-        }
+                + cloud_raw_ptr->points[m].y * cloud_raw_ptr->points[m].y);  //XY平面内，点到原点的距离
 
         th = acos(cloud_raw_ptr->points[m].x/r);//点对应的向量的角度（以x轴正方向为零角度）
     
         if(cloud_raw_ptr->points[m].y<0)
         {
             th = 2*M_PI-th;   //角度范围 车周0~TH度
-        }                  
+        }      
 
-        t = floor(th/grid_size_th);   //坐标转换为极坐标栅格地图坐标
+        t = (int)floor(th/grid_size_th) % TH;   //坐标转换为极坐标栅格地图坐标
         a = floor(r/grid_size_r);
-
-        if(t == TH)
-        {
-            t = 0;
-        }
-
-        if(a == R)
-        {
-            a = R-1;
-        }
-
+        a = a >= R? R-1 : a;
         grid[a][t].grid_cloud_ptr->points.push_back(cloud_raw_ptr->points[m]);  //把该点划入对应栅格内
         cloud_reduce_ptr->push_back(cloud_raw_ptr->points[m]);
     }

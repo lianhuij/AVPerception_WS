@@ -75,7 +75,7 @@
   </node> 
 
   <!--rviz可视化-->
-  <node pkg="rviz" type="rviz" name="rviz" />   
+  <node pkg="rviz" type="rviz" name="rviz" args="-d $(find lidar_grid)/rviz/lidar_grid.rviz" required="true"/>     
 
   <!--rqt_plot显示曲线-->
   <node pkg="rqt_plot" type="rqt_plot" name="plot1" />
