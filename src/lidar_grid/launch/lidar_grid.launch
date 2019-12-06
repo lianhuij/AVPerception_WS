@@ -12,6 +12,8 @@
   <arg name="grid_size" default="0.2" />
   <!--地面点阈值-->
   <arg name="threshold" default="0.1" />
+  <!--RANSAC 阈值-->
+  <arg name="RANSAC_threshold" default="0.2" />
   <!--可通行域裁剪宽度-->
   <arg name="cut_width" default="1.7" />
   <!--裁剪近处自车点x范围-->
@@ -42,6 +44,7 @@
     <param name="threshold" value="$(arg threshold)" />
     <param name="cut_x" value="$(arg cut_x)" />
     <param name="cut_y" value="$(arg cut_y)" />
+    <param name="RANSAC_threshold" value="$(arg RANSAC_threshold)" />
   </node>
   
   <!--处理点云输出可通行栅格，RANSAC方法>
@@ -56,6 +59,7 @@
     <param name="y_width" value="$(arg y_width)" />
     <param name="x_forward" value="$(arg x_forward)" />
     <param name="x_backward" value="$(arg x_backward)" />
+    <param name="RANSAC_threshold" value="$(arg RANSAC_threshold)" />
   </node-->
 
   <!--处理点云输出可通行栅格，梯度方法-->

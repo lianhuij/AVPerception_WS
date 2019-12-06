@@ -42,6 +42,7 @@ protected:
     float cut_y;              //裁剪近处自车点y范围
     int y_width;              //输出栅格地图一侧宽度
     int x_forward;            //输出栅格地图前向长度
+    float RANSAC_threshold;   //RANSAC阈值
 
 public:
     LidarCloudHandler(void)
@@ -61,6 +62,7 @@ public:
         nh.getParam("/lidar_calibration/cut_y", cut_y);
         nh.getParam("/lidar_calibration/y_width", y_width);
         nh.getParam("/lidar_calibration/x_forward", x_forward);
+        nh.getParam("/lidar_calibration/RANSAC_threshold", RANSAC_threshold);
         grid_size_th = 2*M_PI/TH;
     }
     ~LidarCloudHandler() { }
@@ -140,7 +142,7 @@ void LidarCloudHandler::calibration(const sensor_msgs::PointCloud2ConstPtr& inpu
                 pcl::getMinMax3D (*grid[i][j].grid_cloud_ptr, minpoint, maxpoint);   //这里的最大最小是值，不是对应一个点
                 h = maxpoint.z - minpoint.z;                                         //该栅格内数据点的最大高度差
                 
-                if (h<threshold && maxpoint.z<-1)  //最大高度差小于阈值且z小于-1m的点归为地面候选点
+                if (h<threshold)  //最大高度差小于阈值的点归为地面候选点
                 {
                     for(int m=0; m<grid[i][j].grid_cloud_ptr->size(); ++m)
                     {
@@ -159,7 +161,7 @@ void LidarCloudHandler::calibration(const sensor_msgs::PointCloud2ConstPtr& inpu
     seg.setMethodType (pcl::SAC_RANSAC);
     seg.setOptimizeCoefficients (true);
     seg.setMaxIterations(500);
-    seg.setDistanceThreshold (0.2);
+    seg.setDistanceThreshold (RANSAC_threshold);
     seg.setInputCloud (cloud_temp_ptr);
     seg.segment (*inliers, *coefficients);
     
