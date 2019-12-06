@@ -8,7 +8,7 @@ extern ros::Publisher lidar_kf_pub;
 extern std::string FIXED_FRAME;
 extern SensorFusion fusion_tracker;
 
-LidarTracker::LidarTracker()
+LidarTracker::LidarTracker(void)
 {
     matched_pair.clear();
     prev_matched.clear();
@@ -87,7 +87,7 @@ void LidarTracker::InitTrack(const LidarObject &obj)
     track_info.push_back(init_info);
 }
 
-void LidarTracker::Predict()
+void LidarTracker::Predict(void)
 {
     if(X.size() != P.size()){
       ROS_ERROR("lidar tracker error: Predict state size not equal");
@@ -246,7 +246,7 @@ bool LidarTracker::IsConverged(int track_index)
     return converged;
 }
 
-void LidarTracker::PubLidarTracks()
+void LidarTracker::PubLidarTracks(void)
 {
     static int pre_marker_size_ = 0;
     visualization_msgs::MarkerArray marker_array;

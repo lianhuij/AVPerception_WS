@@ -19,17 +19,17 @@ const float VT_GATE    = 1.0;
 class RadarCMKFTracker
 {
 public:
-    RadarCMKFTracker();
+    RadarCMKFTracker(void);
     ~RadarCMKFTracker();
 
     void CMKF(const raw_data::RadarRawArray& input);
     void InitTrack(const RadarObject &obj);
-    void Predict();
+    void Predict(void);
     void MatchGNN(std::vector<RadarObject> &src);
     void Update(std::vector<RadarObject> &src);
     void RemoveTrack(int index);
     bool IsConverged(int track_index);
-    void PubRadarTracks();
+    void PubRadarTracks(void);
     void GetTimeStamp(ros::Time& stamp);
     void GetRadarTrack(std::vector<LocalTrack>& tracks);
 

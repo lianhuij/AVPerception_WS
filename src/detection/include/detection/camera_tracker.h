@@ -15,17 +15,17 @@ const float CAM_RY_GATE  = 1.0;
 class CameraTracker
 {
 public:
-    CameraTracker();
+    CameraTracker(void);
     ~CameraTracker();
 
     void KF(const raw_data::CameraRawArray& input);
     void InitTrack(const CameraObject &obj);
-    void Predict();
+    void Predict(void);
     void MatchGNN(const std::vector<CameraObject>& src);
     void Update(const std::vector<CameraObject>& src);
     void RemoveTrack(int index);
     bool IsConverged(int track_index);
-    void PubCameraTracks();
+    void PubCameraTracks(void);
     void GetTimeStamp(ros::Time& stamp);
     void GetCameraTrack(std::vector<LocalTrack>& tracks);
 

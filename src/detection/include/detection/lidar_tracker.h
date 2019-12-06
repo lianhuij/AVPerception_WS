@@ -15,17 +15,17 @@ const float LIDAR_RY_GATE  = 0.8;
 class LidarTracker
 {
 public:
-    LidarTracker();
+    LidarTracker(void);
     ~LidarTracker();
 
     void KF(const detection::LidarRawArray& input);
     void InitTrack(const LidarObject &obj);
-    void Predict();
+    void Predict(void);
     void MatchGNN(const std::vector<LidarObject>& src);
     void Update(const std::vector<LidarObject>& src);
     void RemoveTrack(int index);
     bool IsConverged(int track_index);
-    void PubLidarTracks();
+    void PubLidarTracks(void);
     void GetTimeStamp(ros::Time& stamp);
     void GetLidarTrack(std::vector<LocalTrack>& tracks);
 

@@ -40,7 +40,7 @@ SensorFusion::SensorFusion(void)
     Q(4,4) = 0.1;       Q(5,5) = 0.1;
 }
 
-SensorFusion::~SensorFusion(void) { }
+SensorFusion::~SensorFusion() { }
 
 void SensorFusion::Run(void)
 {
@@ -243,7 +243,7 @@ void SensorFusion::InitTrack(const std::pair<int, int>& pair)
     track_info.push_back(init_info);
 }
 
-void SensorFusion::Predict()
+void SensorFusion::Predict(void)
 {
     if(X.size() != P.size()){
       ROS_ERROR("fusion tracker error: Predict state size not equal");

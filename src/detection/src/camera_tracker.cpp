@@ -6,7 +6,7 @@
 extern ros::Publisher camera_kf_pub;
 extern std::string FIXED_FRAME;
 
-CameraTracker::CameraTracker()
+CameraTracker::CameraTracker(void)
 {
     matched_pair.clear();
     prev_matched.clear();
@@ -84,7 +84,7 @@ void CameraTracker::InitTrack(const CameraObject &obj)
     track_info.push_back(init_info);
 }
 
-void CameraTracker::Predict()
+void CameraTracker::Predict(void)
 {
     if(X.size() != P.size()){
       ROS_ERROR("camera tracker error: Predict state size not equal");
@@ -244,7 +244,7 @@ bool CameraTracker::IsConverged(int track_index)
     return converged;
 }
 
-void CameraTracker::PubCameraTracks()
+void CameraTracker::PubCameraTracks(void)
 {
     static int pre_marker_size_ = 0;
     visualization_msgs::MarkerArray marker_array;

@@ -35,7 +35,7 @@ public:
         adjPoints.resize(size);
         clusterIdx = -1;
     }
-    void run () {
+    void run (void) {
         checkNearPoints();       
         for(int i=0; i<size; ++i) {
             if(points[i].cluster != NOT_CLASSIFIED) continue;
@@ -62,7 +62,7 @@ public:
         }
     }
     
-    void checkNearPoints() {
+    void checkNearPoints(void) {
         for(int i=0; i<size; ++i) {
             for(int j=0; j<size; ++j) {
                 if(i == j) continue;
@@ -79,7 +79,7 @@ public:
         return points[idx].ptsCnt >= minPts;
     }
     
-    std::vector<std::vector<int> > getCluster() {
+    std::vector<std::vector<int> > getCluster(void) {
         return cluster;
     }
 };

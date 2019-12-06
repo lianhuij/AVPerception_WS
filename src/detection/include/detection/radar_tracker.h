@@ -19,17 +19,17 @@ const float VT_GATE    = 1.0;
 class RadarTracker
 {
 public:
-    RadarTracker();
+    RadarTracker(void);
     ~RadarTracker();
 
     void EKF(const raw_data::RadarRawArray& input);
     void InitTrack(const RadarObject &obj);
-    void Predict();
+    void Predict(void);
     void MatchGNN(const std::vector<RadarObject>& src);
     void Update(const std::vector<RadarObject>& src);
     void RemoveTrack(int index);
     bool IsConverged(int track_index);
-    void PubRadarTracks();
+    void PubRadarTracks(void);
     void GetTimeStamp(ros::Time& stamp);
     void GetRadarTrack(std::vector<LocalTrack>& tracks);
 

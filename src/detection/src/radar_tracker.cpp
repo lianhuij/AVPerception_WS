@@ -7,7 +7,7 @@ extern ros::Publisher radar_ekf_pub;
 extern std::string FIXED_FRAME;
 extern float X_OFFSET;
 
-RadarTracker::RadarTracker()
+RadarTracker::RadarTracker(void)
 {
     matched_pair.clear();
     prev_matched.clear();
@@ -98,7 +98,7 @@ void RadarTracker::InitTrack(const RadarObject &obj)
     track_info.push_back(init_info);
 }
 
-void RadarTracker::Predict()
+void RadarTracker::Predict(void)
 {
     if(X.size() != P.size()){
       ROS_ERROR("radar tracker error: Predict state size not equal");
@@ -292,7 +292,7 @@ bool RadarTracker::IsConverged(int track_index)
     return converged;
 }
 
-void RadarTracker::PubRadarTracks()
+void RadarTracker::PubRadarTracks(void)
 {
     static int pre_marker_size_ = 0;
     visualization_msgs::MarkerArray marker_array;

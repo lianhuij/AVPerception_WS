@@ -17,7 +17,7 @@ class SensorFusion    //fusion at lidar time
 {
 public:
     SensorFusion(void);
-    ~SensorFusion(void);
+    ~SensorFusion();
 
     void Run(void);
     void GetLocalTracks(void);

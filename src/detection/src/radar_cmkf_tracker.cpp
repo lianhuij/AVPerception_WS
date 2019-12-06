@@ -7,7 +7,7 @@ extern ros::Publisher radar_cmkf_pub;
 extern std::string FIXED_FRAME;
 extern float X_OFFSET;
 
-RadarCMKFTracker::RadarCMKFTracker()
+RadarCMKFTracker::RadarCMKFTracker(void)
 {
     matched_pair.clear();
     prev_matched.clear();
@@ -100,7 +100,7 @@ void RadarCMKFTracker::InitTrack(const RadarObject &obj)
     track_info.push_back(init_info);
 }
 
-void RadarCMKFTracker::Predict()
+void RadarCMKFTracker::Predict(void)
 {
     if(X.size() != P.size()){
       ROS_ERROR("radar tracker error: Predict state size not equal");
@@ -309,7 +309,7 @@ bool RadarCMKFTracker::IsConverged(int track_index)
     return converged;
 }
 
-void RadarCMKFTracker::PubRadarTracks()
+void RadarCMKFTracker::PubRadarTracks(void)
 {
     static int pre_marker_size_ = 0;
     visualization_msgs::MarkerArray marker_array;
