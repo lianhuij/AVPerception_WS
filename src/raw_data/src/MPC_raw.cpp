@@ -33,7 +33,7 @@ void MPCDataHandler::canHandler(const can_msgs::Frame& input)
 //////////////////////////////解析CAN消息 ESR///////////////////////////////
     if(input.id == 0x550){
         radar_num = input.data[0];
-        radar_stamp = input.header.stamp;
+        radar_stamp = ros::Time::now();
         if(radar_num > 0){
             radar_head = false;
             std::vector<raw_data::RadarRaw>().swap(radarRaw);  //清除元素并回收内存
@@ -79,7 +79,7 @@ void MPCDataHandler::canHandler(const can_msgs::Frame& input)
 //////////////////////////////解析CAN消息 Mobileye///////////////////////////////
     if(input.id == 0x570){
         cam_num = input.data[0];
-        cam_stamp = input.header.stamp;
+        cam_stamp = ros::Time::now();
         if(cam_num > 0){
             cam_head = false;
             std::vector<raw_data::CameraRaw>().swap(camRaw);  //清除元素并回收内存

@@ -70,16 +70,31 @@ void SensorFusion::Run(void)
 }
 
 void SensorFusion::GetLocalTracks(void){
-    lidar_tracker.GetTimeStamp(time_stamp);
-    ros::Time radar_stamp, camera_stamp;
+    ros::Time lidar_stamp, radar_stamp, camera_stamp;
+    lidar_tracker.GetTimeStamp(lidar_stamp);
     radar_tracker.GetTimeStamp(radar_stamp);
     camera_tracker.GetTimeStamp(camera_stamp);
     lidar_tracker.GetLidarTrack(lidar_tracks);
     radar_tracker.GetRadarTrack(radar_tracks);
     camera_tracker.GetCameraTrack(camera_tracks);
+    time_stamp = ros::Time::now();
+
+    //lidar延时补偿
+    double dt = (time_stamp - lidar_stamp).toSec();
+    F(0,2) = F(1,3) = F(2,4) = F(3,5) = dt;
+    F(0,4) = F(1,5) = dt*dt/2;
+    matrix6d Ql = matrix6d::Zero(6,6);
+    Ql(0,0) = 0.001;     Ql(1,1) = 0.001;
+    Ql(2,2) = 0.05;      Ql(3,3) = 0.05;
+    Ql(4,4) = 0.1;       Ql(5,5) = 0.1;
+    for(std::vector<LocalTrack>::iterator it= lidar_tracks.begin(); it!= lidar_tracks.end(); ++it){
+        it->X = F * it->X;
+        it->P = F * it->P * F.transpose() + Ql;
+    }
+    // std::cout << "lidar dt = " << dt*1000 <<std::endl;
 
     //对齐radar信息
-    double dt = (time_stamp - radar_stamp).toSec();
+    dt = (time_stamp - radar_stamp).toSec();
     F(0,2) = F(1,3) = F(2,4) = F(3,5) = dt;
     F(0,4) = F(1,5) = dt*dt/2;
     matrix6d Qr = matrix6d::Zero(6,6);
@@ -88,7 +103,7 @@ void SensorFusion::GetLocalTracks(void){
     Qr(4,4) = 0.3;       Qr(5,5) = 0.3;
     for(std::vector<LocalTrack>::iterator it= radar_tracks.begin(); it!= radar_tracks.end(); ++it){
         it->X = F * it->X;
-        it->X(0) += X_OFFSET;
+        it->X(0) = it->X(0) + X_OFFSET;    //radar坐标对齐到lidar
         it->P = F * it->P * F.transpose() + Qr;
     }
     // std::cout << "radar dt = " << dt*1000 <<std::endl;
@@ -135,15 +150,15 @@ void SensorFusion::GetLocalTracks(void){
         vector6d Xr = radar_tracks[i].X;
         matrix6d Pr = radar_tracks[i].P;
         for ( int j = 0; j < lidar_track_num; ++j ){
-            vector6d Xl = lidar_tracks[i].X;
-            matrix6d Pl = lidar_tracks[i].P;
+            vector6d Xl = lidar_tracks[j].X;
+            matrix6d Pl = lidar_tracks[j].P;
             if(fabs(Xr(0)- Xl(0)) < RX_TRACK_GATE && fabs(Xr(1)- Xl(1)) < RY_TRACK_GATE){
                 matrix6d C = Pr + Pl;
                 w_ij(i, j) = normalDistributionDensity< 6 >(C, Xr, Xl);
                 // std::cout << "w_ij(i, j) = " << w_ij(i, j) <<std::endl;
             }else{
                 w_ij(i, j) = 0;
-                // std::cout << "fabs(Xr(0)- Xl(0)) = " << fabs(Xr(0)- Xl(0)) <<"  fabs(Xr(1)- Xl(1)) = " << fabs(Xr(1)- Xl(1))<< std::endl;
+                // std::cout << "Xr(0) = " << Xr(0) <<" Xr(1) = " << Xr(1)<<" Xl(0) = " << Xl(0) <<" Xl(1) = " << Xl(1)<< std::endl;
             }
         }
     }
@@ -166,11 +181,13 @@ void SensorFusion::GetLocalTracks(void){
             local_matched_pair.push_back(pair);
             radar_matched[e.x] = true;
             lidar_matched[e.y] = true;
+            // std::cout<< e.x <<e.y<<std::endl;
         }
         else // 未关联的局部航迹 radar
         {
             std::pair<int, int> pair(e.x, -1);  // 表示单独的radar航迹
             local_matched_pair.push_back(pair);
+            // std::cout<< e.x << -1 <<std::endl;
         }
     }
 
@@ -180,6 +197,7 @@ void SensorFusion::GetLocalTracks(void){
         {
             std::pair<int, int> pair(-1, i);  // 表示单独的lidar航迹
             local_matched_pair.push_back(pair);
+            // std::cout<< -1 << i <<std::endl;
         }
     }
 }

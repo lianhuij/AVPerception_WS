@@ -61,6 +61,8 @@ public:
 void LidarClusterHandler::cluster(const sensor_msgs::PointCloud2ConstPtr& input)
 {
     // clock_t start = clock();
+    detection::LidarRawArray raw_array;
+    raw_array.header.stamp = ros::Time::now();
     pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_raw_ptr  (new pcl::PointCloud<pcl::PointXYZ>);
     pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_roi_ptr (new pcl::PointCloud<pcl::PointXYZ>);
     pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_obstacle_ptr (new pcl::PointCloud<pcl::PointXYZ>);
@@ -120,7 +122,6 @@ void LidarClusterHandler::cluster(const sensor_msgs::PointCloud2ConstPtr& input)
     pcl_output.header.stamp = input->header.stamp;
     pc_pub.publish(pcl_output);              //发布原始障碍物点云
 
-    detection::LidarRawArray raw_array;
     if(cloud_obstacle_ptr->size() >= MIN_CLUSTER_SIZE){//A
         //障碍目标点云聚类 欧氏聚类
         std::vector<pcl::PointIndices> cluster_indices;
@@ -159,7 +160,6 @@ void LidarClusterHandler::cluster(const sensor_msgs::PointCloud2ConstPtr& input)
     else{
         raw_array.num = 0;
     }
-    raw_array.header.stamp = input->header.stamp;
     lidar_rawArray_pub.publish(raw_array);
     PublidarPed(raw_array);
 
