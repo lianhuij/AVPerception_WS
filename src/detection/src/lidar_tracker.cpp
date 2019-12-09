@@ -17,7 +17,6 @@ LidarTracker::LidarTracker(void)
     X.clear();
     P.clear();
     
-    ts = 0.1;
     init_P = matrix6d::Zero(6,6);
     init_P(0,0) = 1;    init_P(1,1) = 1;
     init_P(2,2) = 16;   init_P(3,3) = 16;
@@ -25,11 +24,7 @@ LidarTracker::LidarTracker(void)
     F = matrix6d::Zero(6,6);
     F(0,0) = 1;         F(1,1) = 1;
     F(2,2) = 1;         F(3,3) = 1;
-    F(4,4) = 1;         F(5,5) = 1;
     Q = matrix6d::Zero(6,6);
-    Q(0,0) = 0.001;     Q(1,1) = 0.001;
-    Q(2,2) = 0.05;      Q(3,3) = 0.05;
-    Q(4,4) = 0.1;       Q(5,5) = 0.1;
     H = matrix2_6d::Zero(2,6);
     H(0,0) = 1;
     H(1,1) = 1;
@@ -92,12 +87,55 @@ void LidarTracker::Predict(void)
     if(X.size() != P.size()){
       ROS_ERROR("lidar tracker error: Predict state size not equal");
     }
-    F(0,2) = F(1,3) = F(2,4) = F(3,5) = ts;
-    F(0,4) = F(1,5) = ts*ts/2;
+    float ax_ = ALPHA_X*ts;
+    float ay_ = ALPHA_Y*ts;
+    float bx_ = exp(-ALPHA_X*ts);
+    float by_ = exp(-ALPHA_Y*ts);
+    F(0,2) = F(1,3) = ts;
+    F(2,4) = (1 - bx_)/ALPHA_X;  F(3,5) = (1 - by_)/ALPHA_Y;
+    F(0,4) = (ax_ + bx_ -1)/(ALPHA_X*ALPHA_X);  F(1,5) = (ay_ + by_ -1)/(ALPHA_Y*ALPHA_Y);
+    F(4,4) = bx_;  F(5,5) = by_;
+    matrix6_2d U = matrix6_2d::Zero(6,2);
+    U(0,0) = (0.5*ax_*ts + (1- bx_)/ALPHA_X -ts)/ALPHA_X;
+    U(1,0) = ts - (1- bx_)/ALPHA_X;
+    U(2,0) = 1- bx_;
+    U(3,1) = (0.5*ay_*ts + (1- by_)/ALPHA_Y -ts)/ALPHA_Y;
+    U(4,1) = ts - (1- by_)/ALPHA_Y;
+    U(5,1) = 1- by_;
+    vector2d A;
+    float sigmax2 = (4-M_PI)/M_PI; 
+    float sigmay2 = sigmax2;
+    float qx11 = (1- bx_*bx_ +2*ax_ +2*pow(ax_,3)/3 -2*ax_*ax_ -4*ax_*bx_)/(2*pow(ALPHA_X,5));
+    float qx12 = (1+ bx_*bx_ -2*bx_ +2*ax_*bx_ -2*ax_ +ax_*ax_)/(2*pow(ALPHA_X,4));
+    float qx13 = (1- bx_*bx_ -2*ax_*bx_)/(2*pow(ALPHA_X,3));
+    float qx22 = (4*bx_ -3 -bx_*bx_ +2*ax_)/(2*pow(ALPHA_X,3));
+    float qx23 = (bx_*bx_ +1 -2*bx_)/(2*pow(ALPHA_X,2));
+    float qx33 = (1- bx_*bx_)/(2*ALPHA_X);
+    float qy11 = (1- by_*by_ +2*ay_ +2*pow(ay_,3)/3 -2*ay_*ay_ -4*ay_*by_)/(2*pow(ALPHA_Y,5));
+    float qy12 = (1+ by_*by_ -2*by_ +2*ay_*by_ -2*ay_ +ay_*ay_)/(2*pow(ALPHA_Y,4));
+    float qy13 = (1- by_*by_ -2*ay_*by_)/(2*pow(ALPHA_Y,3));
+    float qy22 = (4*by_ -3 -by_*by_ +2*ay_)/(2*pow(ALPHA_Y,3));
+    float qy23 = (by_*by_ +1 -2*by_)/(2*pow(ALPHA_Y,2));
+    float qy33 = (1- by_*by_)/(2*ALPHA_Y);
+    float qx_ = 2*ALPHA_X;
+    float qy_ = 2*ALPHA_Y;
     int prev_track_num = X.size();
     for (int i=0; i<prev_track_num; ++i)
     {
-        X[i] = F * X[i];
+        A(0) = X[i](4);  A(1) = X[i](5);
+        sigmax2 *= pow(MAX_ACC - fabs(A(0)), 2);
+        sigmay2 *= pow(MAX_ACC - fabs(A(1)), 2);
+        qx_ *= sigmax2;
+        qy_ *= sigmay2;
+        qx11 *= qx_; qx12 *= qx_; qx13 *= qx_; qx22 *= qx_; qx23 *= qx_; qx33 *= qx_;
+        qy11 *= qy_; qy12 *= qy_; qy13 *= qy_; qy22 *= qy_; qy23 *= qy_; qy33 *= qy_;
+        Q << qx11, 0,    qx12, 0,    qx13, 0,
+             0,    qy11, 0,    qy12, 0,    qy13,
+             qx12, 0,    qx22, 0,    qx23, 0,
+             0,    qy12, 0,    qy22, 0,    qy23,
+             qx13, 0,    qx23, 0,    qx33, 0,
+             0,    qy13, 0,    qy23, 0,    qy33;
+        X[i] = F * X[i] + U * A;
         P[i] = F * P[i] * F.transpose() + Q;
     }
 }

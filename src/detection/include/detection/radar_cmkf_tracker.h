@@ -7,8 +7,8 @@
 #include "detection/dbscan.h"
 #include "detection/GNN.h"
 
-const int RADAR_MIN_CONFIDENCE   = 13;
-const int RADAR_MAX_CONFIDENCE   = 30;
+const int RADAR_MIN_CONFIDENCE   = 22;
+const int RADAR_MAX_CONFIDENCE   = 60;
 const float RADAR_CLUSTER_EPS    = 0.85;
 const float RADAR_CLUSTER_MINPTS = 0;
 const float RADAR_NEWOBJ_WEIGHT  = 0.1;

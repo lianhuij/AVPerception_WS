@@ -14,7 +14,6 @@ std::string FIXED_FRAME;
 float X_OFFSET;
 
 // RadarTracker radar_tracker;
-// RadarTracker* radar_tracker_ptr = &radar_tracker;
 RadarCMKFTracker radar_tracker;
 RadarCMKFTracker* radar_tracker_ptr = &radar_tracker;
 CameraTracker camera_tracker;

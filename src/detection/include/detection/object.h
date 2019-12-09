@@ -26,6 +26,9 @@ typedef typename Eigen::MatrixXd matrixXd;
 
 const float PED_WIDTH  = 0.6;
 const float PED_HEIGHT = 1.7;
+const float ALPHA_X = 0.8;
+const float ALPHA_Y = 0.75;
+const float MAX_ACC = 2.0;
 
 typedef enum ObjectType{ VEHICLE, TRUCK, BIKE, PED, BICYCLE, UNKNOWN }ObjectType;
 
