@@ -11,7 +11,7 @@
   <!--lidar ROI width-->
   <arg name="ROI_width" default="5.5" />
   <!--lidar ROI length-->
-  <arg name="ROI_length" default="23.0" />
+  <arg name="ROI_length" default="22.0" />
 
   <!--读bag文件-->
   <node pkg="rosbag" type="play" name="player" args="$(find record_data)/bagfiles/191112_f10.bag" respawn="true" />    

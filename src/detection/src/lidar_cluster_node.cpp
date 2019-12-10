@@ -18,8 +18,8 @@
 #include <detection/object.h>
 
 const float CLUSTER_TOLERANCE = 0.6;
-const int MIN_CLUSTER_SIZE    = 7;
-const int MAX_CLUSTER_SIZE    = 400;
+const int MIN_CLUSTER_SIZE    = 6;
+const int MAX_CLUSTER_SIZE    = 500;
 const float OBJECT_MIN_WIDTH  = 0.5;
 
 ////////////////////////激光雷达点云目标聚类处理类////////////////////////
@@ -144,12 +144,14 @@ void LidarClusterHandler::cluster(const sensor_msgs::PointCloud2ConstPtr& input)
             for (std::vector<int>::const_iterator pit = it->indices.begin (); pit != it->indices.end (); pit++) {
                 cloud_cluster->points.push_back (cloud_obstacle_ptr->points[*pit]);
             }
-            vector4d centroid;
+            // vector4d centroid;
             pcl::PointXYZ minpoint, maxpoint;
-            pcl::compute3DCentroid (*cloud_cluster, centroid);
+            // pcl::compute3DCentroid (*cloud_cluster, centroid);
             pcl::getMinMax3D (*cloud_cluster, minpoint, maxpoint);
-            raw.x = centroid[0];
-            raw.y = centroid[1];
+            // raw.x = centroid[0];
+            // raw.y = centroid[1];
+            raw.x = (maxpoint.x + minpoint.x)/2;
+            raw.y = (maxpoint.y + minpoint.y)/2;
             raw.width = maxpoint.y - minpoint.y;
             if(raw.width < OBJECT_MIN_WIDTH) raw.width = OBJECT_MIN_WIDTH;
             if(mark >= 15) ROS_ERROR("lidar raw num > 15");

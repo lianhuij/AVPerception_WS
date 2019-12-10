@@ -9,8 +9,8 @@
 const int LIDAR_MIN_CONFIDENCE   = 7;
 const int LIDAR_MAX_CONFIDENCE   = 100;
 const float LIDAR_NEWOBJ_WEIGHT  = 0.01;
-const float LIDAR_RX_GATE  = 0.8;   // rx 0.8m, ry 0.8m
-const float LIDAR_RY_GATE  = 0.8;
+const float LIDAR_RX_GATE  = 1.0;   // rx 1.0m, ry 1.0m
+const float LIDAR_RY_GATE  = 1.0;
 
 class LidarTracker
 {
