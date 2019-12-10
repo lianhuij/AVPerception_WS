@@ -84,8 +84,8 @@ struct ObjectInfo : Object{
 };
 
 struct LocalTrack : Object{
-    vector6d X;  // rx ry vx vy ax ay
-    matrix6d P;
+    vector6d X, X_;  // rx ry vx vy ax ay
+    matrix6d P, P_;
     ObjectType type;
     float width;
 };

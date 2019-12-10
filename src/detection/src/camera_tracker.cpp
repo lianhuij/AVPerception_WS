@@ -191,22 +191,22 @@ void CameraTracker::Update(const std::vector<CameraObject>& src)
     
     for (int i=0; i<matched_pair.size(); ++i)    // upgrade matched
     {
-        int src_index = matched_pair[i].first;
-        int prev_index = matched_pair[i].second;
+        int src_idx = matched_pair[i].first;
+        int prev_idx = matched_pair[i].second;
 
-        float rx_ = X[prev_index](0);
-        float ry_ = X[prev_index](1);
+        float rx_ = X[prev_idx](0);
+        float ry_ = X[prev_idx](1);
 
-        float rx = src[src_index].rx;
-        float ry = src[src_index].ry;
+        float rx = src[src_idx].rx;
+        float ry = src[src_idx].ry;
 
         vector2d Y(rx-rx_, ry-ry_);
-        matrix2d S = H * P[prev_index] * H.transpose() + R;
+        matrix2d S = H * P[prev_idx] * H.transpose() + R;
         matrix6_2d K = matrix6_2d::Zero(6,2);
-        K = P[prev_index] * H.transpose() * S.inverse();
+        K = P[prev_idx] * H.transpose() * S.inverse();
 
-        X[prev_index] = X[prev_index] + K * Y;
-        P[prev_index] = (matrix6d::Identity(6,6) - K * H) * P[prev_index];
+        X[prev_idx] = X[prev_idx] + K * Y;
+        P[prev_idx] = (matrix6d::Identity(6,6) - K * H) * P[prev_idx];
     }
 }
 

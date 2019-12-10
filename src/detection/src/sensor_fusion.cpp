@@ -88,8 +88,10 @@ void SensorFusion::GetLocalTracks(void){
     Ql(2,2) = 0.05;      Ql(3,3) = 0.05;
     Ql(4,4) = 0.1;       Ql(5,5) = 0.1;
     for(std::vector<LocalTrack>::iterator it= lidar_tracks.begin(); it!= lidar_tracks.end(); ++it){
-        it->X = F * it->X;
-        it->P = F * it->P * F.transpose() + Ql;
+        it->X  = F * it->X;
+        it->P  = F * it->P * F.transpose() + Ql;
+        it->X_ = F * it->X_;
+        it->P_ = F * it->P_ * F.transpose() + Ql;
     }
     // std::cout << "lidar dt = " << dt*1000 <<std::endl;
 
@@ -105,6 +107,9 @@ void SensorFusion::GetLocalTracks(void){
         it->X = F * it->X;
         it->X(0) = it->X(0) + X_OFFSET;    //radar坐标对齐到lidar
         it->P = F * it->P * F.transpose() + Qr;
+        it->X_ = F * it->X_;
+        it->X_(0) = it->X_(0) + X_OFFSET;
+        it->P_ = F * it->P_ * F.transpose() + Qr;
     }
     // std::cout << "radar dt = " << dt*1000 <<std::endl;
 
@@ -208,14 +213,14 @@ void SensorFusion::GetLocalTracks(void){
 }
 
 ObjectType SensorFusion::GetCameraType(const std::pair<int, int>& pair){
-    int radar_index = pair.first;
-    int lidar_index = pair.second;
+    int radar_idx = pair.first;
+    int lidar_idx = pair.second;
     float min_dist= CAMERA_TRACK_GATE;
     int camera_index;
     int size = camera_tracks.size();
-    if(lidar_index == -1){
-        float x = radar_tracks[radar_index].X(0);
-        float y = radar_tracks[radar_index].X(1);
+    if(lidar_idx == -1){
+        float x = radar_tracks[radar_idx].X(0);
+        float y = radar_tracks[radar_idx].X(1);
         for(int i=0; i<size; ++i){
             float dist = fabs(x- camera_tracks[i].X(0)) + fabs(y- camera_tracks[i].X(1));
             if(min_dist > dist){
@@ -224,8 +229,8 @@ ObjectType SensorFusion::GetCameraType(const std::pair<int, int>& pair){
             }
         }
     }else{
-        float x = lidar_tracks[lidar_index].X(0);
-        float y = lidar_tracks[lidar_index].X(1);
+        float x = lidar_tracks[lidar_idx].X(0);
+        float y = lidar_tracks[lidar_idx].X(1);
         for(int i=0; i<size; ++i){
             float dist = fabs(x- camera_tracks[i].X(0)) + fabs(y- camera_tracks[i].X(1));
             if(min_dist > dist){
@@ -242,24 +247,24 @@ ObjectType SensorFusion::GetCameraType(const std::pair<int, int>& pair){
 
 void SensorFusion::InitTrack(const std::pair<int, int>& pair)
 {
-    int radar_index = pair.first;
-    int lidar_index = pair.second;
+    int radar_idx = pair.first;
+    int lidar_idx = pair.second;
     ObjectInfo init_info;
     init_info.type = GetCameraType(pair);
     vector6d init_X = vector6d::Zero(6);
     matrix6d init_P = matrix6d::Zero(6,6);
-    if(radar_index == -1){
-        init_X = lidar_tracks[lidar_index].X;
-        init_P = lidar_tracks[lidar_index].P;
-        init_info.width = lidar_tracks[lidar_index].width;
-    }else if(lidar_index == -1){
-        init_X = radar_tracks[radar_index].X;
-        init_P = radar_tracks[radar_index].P;
+    if(radar_idx == -1){
+        init_X = lidar_tracks[lidar_idx].X;
+        init_P = lidar_tracks[lidar_idx].P;
+        init_info.width = lidar_tracks[lidar_idx].width;
+    }else if(lidar_idx == -1){
+        init_X = radar_tracks[radar_idx].X;
+        init_P = radar_tracks[radar_idx].P;
     }else{
-        init_P = (radar_tracks[radar_index].P.inverse() + lidar_tracks[lidar_index].P.inverse()).inverse();
-        init_X = init_P * (radar_tracks[radar_index].P.inverse() * radar_tracks[radar_index].X
-                           + lidar_tracks[lidar_index].P.inverse() * lidar_tracks[lidar_index].X);
-        init_info.width = lidar_tracks[lidar_index].width;
+        init_P = (radar_tracks[radar_idx].P.inverse() + lidar_tracks[lidar_idx].P.inverse()).inverse();
+        init_X = init_P * (radar_tracks[radar_idx].P.inverse() * radar_tracks[radar_idx].X
+                           + lidar_tracks[lidar_idx].P.inverse() * lidar_tracks[lidar_idx].X);
+        init_info.width = lidar_tracks[lidar_idx].width;
     }
     X.push_back(init_X);
     P.push_back(init_P);
@@ -296,16 +301,16 @@ void SensorFusion::MatchGNN(void)
 
     for ( int i = 0; i < src_obj_num; ++i )
     {
-        int radar_index = local_matched_pair[i].first;
-        int lidar_index = local_matched_pair[i].second;
+        int radar_idx = local_matched_pair[i].first;
+        int lidar_idx = local_matched_pair[i].second;
         vector6d Xm;
         matrix6d Pm;
-        if(lidar_index == -1){
-            Xm = radar_tracks[radar_index].X;
-            Pm = radar_tracks[radar_index].P;
+        if(lidar_idx == -1){
+            Xm = radar_tracks[radar_idx].X;
+            Pm = radar_tracks[radar_idx].P;
         }else{
-            Xm = lidar_tracks[lidar_index].X;
-            Pm = lidar_tracks[lidar_index].P;
+            Xm = lidar_tracks[lidar_idx].X;
+            Pm = lidar_tracks[lidar_idx].P;
         }
         for ( int j = 0; j < prev_track_num; ++j ){
             vector6d X_ = X[j];
@@ -376,33 +381,46 @@ void SensorFusion::Update(void)
     
     for (int i=0; i<matched_pair.size(); ++i)    // upgrade matched
     {
-        int src_index = matched_pair[i].first;
-        int prev_index = matched_pair[i].second;
-        ObjectType type_ = GetCameraType(local_matched_pair[src_index]);
+        int src_idx = matched_pair[i].first;
+        int prev_idx = matched_pair[i].second;
+        ObjectType type_ = GetCameraType(local_matched_pair[src_idx]);
         if(type_ != UNKNOWN){
-            track_info[prev_index].type = type_;
+            track_info[prev_idx].type = type_;
         }
-        int radar_index = local_matched_pair[src_index].first;
-        int lidar_index = local_matched_pair[src_index].second;
+        int radar_idx = local_matched_pair[src_idx].first;
+        int lidar_idx = local_matched_pair[src_idx].second;
 
-        if(radar_index == -1){
-            matrix6d temp_P = (lidar_tracks[lidar_index].P.inverse() + P[prev_index].inverse()).inverse();
-            X[prev_index] = temp_P * (lidar_tracks[lidar_index].P.inverse()*lidar_tracks[lidar_index].X 
-                                      + P[prev_index].inverse()*X[prev_index]);
-            P[prev_index] = temp_P;
-            track_info[prev_index].width = lidar_tracks[lidar_index].width;
-        }else if(lidar_index == -1){
-            matrix6d temp_P = (radar_tracks[radar_index].P.inverse() + P[prev_index].inverse()).inverse();
-            X[prev_index] = temp_P * (radar_tracks[radar_index].P.inverse()*radar_tracks[radar_index].X 
-                                      + P[prev_index].inverse()*X[prev_index]);
-            P[prev_index] = temp_P;
+        if(radar_idx == -1){
+            vector6d lx  = lidar_tracks[lidar_idx].X;
+            vector6d lx_ = lidar_tracks[lidar_idx].X_;
+            matrix6d lp  = lidar_tracks[lidar_idx].P;
+            matrix6d lp_ = lidar_tracks[lidar_idx].P_;
+            matrix6d temp_P = (P[prev_idx].inverse() + lp.inverse() - lp_.inverse()).inverse();
+            X[prev_idx] = temp_P * (P[prev_idx].inverse()*X[prev_idx] + lp.inverse()*lx - lp_.inverse()*lx_);
+            P[prev_idx] = temp_P;
+            track_info[prev_idx].width = lidar_tracks[lidar_idx].width;
+        }else if(lidar_idx == -1){
+            vector6d rx  = radar_tracks[radar_idx].X;
+            vector6d rx_ = radar_tracks[radar_idx].X_;
+            matrix6d rp  = radar_tracks[radar_idx].P;
+            matrix6d rp_ = radar_tracks[radar_idx].P_;
+            matrix6d temp_P = (P[prev_idx].inverse() + rp.inverse() - rp_.inverse()).inverse();
+            X[prev_idx] = temp_P * (P[prev_idx].inverse()*X[prev_idx] + rp.inverse()*rx - rp_.inverse()*rx_);
+            P[prev_idx] = temp_P;
         }else{
-            matrix6d temp_P=(radar_tracks[radar_index].P.inverse()+ lidar_tracks[lidar_index].P.inverse()+ P[prev_index].inverse()).inverse();
-            X[prev_index] = temp_P * (radar_tracks[radar_index].P.inverse()*radar_tracks[radar_index].X 
-                                      + lidar_tracks[lidar_index].P.inverse()*lidar_tracks[lidar_index].X
-                                      + P[prev_index].inverse()*X[prev_index]);
-            P[prev_index] = temp_P;
-            track_info[prev_index].width = lidar_tracks[lidar_index].width;
+            vector6d lx  = lidar_tracks[lidar_idx].X;
+            vector6d lx_ = lidar_tracks[lidar_idx].X_;
+            matrix6d lp  = lidar_tracks[lidar_idx].P;
+            matrix6d lp_ = lidar_tracks[lidar_idx].P_;
+            vector6d rx  = radar_tracks[radar_idx].X;
+            vector6d rx_ = radar_tracks[radar_idx].X_;
+            matrix6d rp  = radar_tracks[radar_idx].P;
+            matrix6d rp_ = radar_tracks[radar_idx].P_;
+            matrix6d temp_P=(P[prev_idx].inverse() + lp.inverse() + rp.inverse() - lp_.inverse() - rp_.inverse()).inverse();
+            X[prev_idx] = temp_P * (P[prev_idx].inverse()*X[prev_idx]
+                                    + lp.inverse()*lx + rp.inverse()*rx - lp_.inverse()*lx_ - rp_.inverse()*rx_);
+            P[prev_idx] = temp_P;
+            track_info[prev_idx].width = lidar_tracks[lidar_idx].width;
         }
     }
 }

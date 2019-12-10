@@ -30,8 +30,8 @@ public:
     void GetLidarTrack(std::vector<LocalTrack>& tracks);
 
 private:
-    std::vector<vector6d> X;  // rx ry vx vy ax ay
-    std::vector<matrix6d> P;
+    std::vector<vector6d> X, X_;  // rx ry vx vy ax ay
+    std::vector<matrix6d> P, P_;
     std::vector<ObjectInfo> track_info;
     matrix6d init_P;
     matrix6d F;

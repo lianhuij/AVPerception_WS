@@ -14,7 +14,9 @@ RadarCMKFTracker::RadarCMKFTracker(void)
     src_matched.clear();
     track_info.clear();
     X.clear();
+    X_.clear();
     P.clear();
+    P_.clear();
     
     ts = 0.05;
     init_P = matrix6d::Zero(6,6);
@@ -94,7 +96,9 @@ void RadarCMKFTracker::InitTrack(const RadarObject &obj)
     init_X(0) = obj.r * cos(obj.theta);
     init_X(1) = obj.r * sin(obj.theta);
     X.push_back(init_X);
+    X_.push_back(init_X);
     P.push_back(init_P);
+    P_.push_back(init_P);
 
     ObjectInfo init_info;
     track_info.push_back(init_info);
@@ -112,6 +116,8 @@ void RadarCMKFTracker::Predict(void)
     {
         X[i] = F * X[i];
         P[i] = F * P[i] * F.transpose() + Q;
+        X_[i] = X[i];
+        P_[i] = P[i];
     }
 }
 
@@ -232,11 +238,11 @@ void RadarCMKFTracker::Update(std::vector<RadarObject> &src)
     double b_2 = sinh(2*sigma2);
     for (int i=0; i<matched_pair.size(); ++i)    // upgrade matched
     {
-        int src_index  = matched_pair[i].first;
-        int prev_index = matched_pair[i].second;
-        float r     = src[src_index].r;
-        float theta = src[src_index].theta;
-        float vt    = src[src_index].vt;
+        int src_idx  = matched_pair[i].first;
+        int prev_idx = matched_pair[i].second;
+        float r     = src[src_idx].r;
+        float theta = src[src_idx].theta;
+        float vt    = src[src_idx].vt;
 
         matrix2d Rp;
         Rp(0,0) = r*r*e_2*(pow(cos(theta),2)*(a_2 -a_1)+ pow(sin(theta),2)*(b_2 -b_1))+
@@ -244,12 +250,12 @@ void RadarCMKFTracker::Update(std::vector<RadarObject> &src)
         Rp(1,1) = r*r*e_2*(pow(sin(theta),2)*(a_2 -a_1)+ pow(cos(theta),2)*(b_2 -b_1))+
                   sigmar2*e_2*(pow(sin(theta),2)*(2*a_2 -a_1)+ pow(cos(theta),2)*(2*b_2 -b_1));
         Rp(0,1) = Rp(1,0) = sin(theta)*cos(theta)*e_4*(sigmar2+ (r*r+sigmar2)*(1-exp(sigma2)));
-        matrix2d Sp   = Hp*P[prev_index]*Hp.transpose() + Rp;
-        matrix6_2d Kp = P[prev_index]*Hp.transpose()*Sp.inverse();
+        matrix2d Sp   = Hp*P[prev_idx]*Hp.transpose() + Rp;
+        matrix6_2d Kp = P[prev_idx]*Hp.transpose()*Sp.inverse();
         vector2d zp(r*cos(theta), r*sin(theta));
         vector2d up(r*cos(theta)*(exp(-sigma2)- exp(-0.5*sigma2)), r*sin(theta)*(exp(-sigma2)- exp(-0.5*sigma2)));
-        X[prev_index] = X[prev_index] + Kp*(zp - up - Hp*X[prev_index]);
-        P[prev_index] = (matrix6d::Identity(6,6) - Kp * Hp) * P[prev_index];
+        X[prev_idx] = X[prev_idx] + Kp*(zp - up - Hp*X[prev_idx]);
+        P[prev_idx] = (matrix6d::Identity(6,6) - Kp * Hp) * P[prev_idx];
 
         double Rx_ = sigmar2*vt*cos(theta)*exp(-sigma2);
         double Ry_ = sigmar2*vt*sin(theta)*exp(-sigma2);
@@ -259,19 +265,19 @@ void RadarCMKFTracker::Update(std::vector<RadarObject> &src)
         matrix1_2d Lk = -Rp_*Rp.inverse();
         double Ra_ = R_ - Rp_*Rp.inverse()*Rp_.transpose();
         vector6d He = vector6d::Zero(6,1);
-        He(0) = Lk(0,0)+X[prev_index](2);
-        He(1) = Lk(0,1)+X[prev_index](3);
-        He(2) = X[prev_index](0);
-        He(3) = X[prev_index](1);
-        double Ak = P[prev_index](0,0)*P[prev_index](2,2)+ P[prev_index](1,1)*P[prev_index](3,3)+ 
-                    2*P[prev_index](0,1)*P[prev_index](2,3)+ 2*P[prev_index](0,3)*P[prev_index](1,2)+ 
-                    P[prev_index](0,2)*P[prev_index](0,2)+ P[prev_index](1,3)*P[prev_index](1,3);
-        double Se = He.transpose()*P[prev_index]*He + Ra_ + Ak;
-        vector6d Ke = P[prev_index]*He/Se;
-        X[prev_index] = X[prev_index] + Ke*(Lk(0,0)*r*cos(theta)+ Lk(0,1)*r*sin(theta)+ r*vt - Lk(0,0)*up(0)- Lk(0,1)*up(1)-
-                                            Lk(0,0)*X[prev_index](0)- Lk(0,1)*X[prev_index](1)- X[prev_index](0)*X[prev_index](2)
-                                            - X[prev_index](1)*X[prev_index](3)- (P[prev_index](0,2)+ P[prev_index](1,3)));
-        P[prev_index] = (matrix6d::Identity(6,6) - Ke * He.transpose()) * P[prev_index];
+        He(0) = Lk(0,0)+X[prev_idx](2);
+        He(1) = Lk(0,1)+X[prev_idx](3);
+        He(2) = X[prev_idx](0);
+        He(3) = X[prev_idx](1);
+        double Ak = P[prev_idx](0,0)*P[prev_idx](2,2)+ P[prev_idx](1,1)*P[prev_idx](3,3)+ 
+                    2*P[prev_idx](0,1)*P[prev_idx](2,3)+ 2*P[prev_idx](0,3)*P[prev_idx](1,2)+ 
+                    P[prev_idx](0,2)*P[prev_idx](0,2)+ P[prev_idx](1,3)*P[prev_idx](1,3);
+        double Se = He.transpose()*P[prev_idx]*He + Ra_ + Ak;
+        vector6d Ke = P[prev_idx]*He/Se;
+        X[prev_idx] = X[prev_idx] + Ke*(Lk(0,0)*r*cos(theta)+ Lk(0,1)*r*sin(theta)+ r*vt - Lk(0,0)*up(0)- Lk(0,1)*up(1)-
+                                            Lk(0,0)*X[prev_idx](0)- Lk(0,1)*X[prev_idx](1)- X[prev_idx](0)*X[prev_idx](2)
+                                            - X[prev_idx](1)*X[prev_idx](3)- (P[prev_idx](0,2)+ P[prev_idx](1,3)));
+        P[prev_idx] = (matrix6d::Identity(6,6) - Ke * He.transpose()) * P[prev_idx];
     }
 }
 
@@ -288,7 +294,9 @@ static void erase_from_vector(std::vector<T> &v, int index)
 void RadarCMKFTracker::RemoveTrack(int index)
 {
     erase_from_vector(X, index);
+    erase_from_vector(X_, index);
     erase_from_vector(P, index);
+    erase_from_vector(P_, index);
     erase_from_vector(track_info, index);
 }
 
@@ -368,8 +376,10 @@ void RadarCMKFTracker::GetRadarTrack(std::vector<LocalTrack>& tracks){
     for(int i=0; i<size; ++i){
         if(track_info[i].confidence < RADAR_MIN_CONFIDENCE) continue;
         if (!IsConverged(i))  continue;
-        track.X = X[i];
-        track.P = P[i];
+        track.X  = X[i];
+        track.X_ = X_[i];
+        track.P  = P[i];
+        track.P_ = P_[i];
         tracks.push_back(track);
     }
 }

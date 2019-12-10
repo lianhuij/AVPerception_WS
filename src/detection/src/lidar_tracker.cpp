@@ -15,7 +15,9 @@ LidarTracker::LidarTracker(void)
     src_matched.clear();
     track_info.clear();
     X.clear();
+    X_.clear();
     P.clear();
+    P_.clear();
     
     init_P = matrix6d::Zero(6,6);
     init_P(0,0) = 1;    init_P(1,1) = 1;
@@ -80,7 +82,9 @@ void LidarTracker::InitTrack(const LidarObject &obj)
     init_X(0) = obj.rx;
     init_X(1) = obj.ry;
     X.push_back(init_X);
+    X_.push_back(init_X);
     P.push_back(init_P);
+    P_.push_back(init_P);
 
     ObjectInfo init_info(UNKNOWN, obj.width);
     track_info.push_back(init_info);
@@ -98,6 +102,8 @@ void LidarTracker::Predict(void)
     {
         X[i] = F * X[i];
         P[i] = F * P[i] * F.transpose() + Q;
+        X_[i] = X[i];
+        P_[i] = P[i];
     }
 }
 
@@ -194,22 +200,22 @@ void LidarTracker::Update(const std::vector<LidarObject>& src)
     
     for (int i=0; i<matched_pair.size(); ++i)    // upgrade matched
     {
-        int src_index = matched_pair[i].first;
-        int prev_index = matched_pair[i].second;
+        int src_idx = matched_pair[i].first;
+        int prev_idx = matched_pair[i].second;
 
-        float rx_ = X[prev_index](0);
-        float ry_ = X[prev_index](1);
+        float rx_ = X[prev_idx](0);
+        float ry_ = X[prev_idx](1);
 
-        float rx = src[src_index].rx;
-        float ry = src[src_index].ry;
+        float rx = src[src_idx].rx;
+        float ry = src[src_idx].ry;
 
         vector2d Y(rx-rx_, ry-ry_);
-        matrix2d S = H * P[prev_index] * H.transpose() + R;
+        matrix2d S = H * P[prev_idx] * H.transpose() + R;
         matrix6_2d K = matrix6_2d::Zero(6,2);
-        K = P[prev_index] * H.transpose() * S.inverse();
+        K = P[prev_idx] * H.transpose() * S.inverse();
 
-        X[prev_index] = X[prev_index] + K * Y;
-        P[prev_index] = (matrix6d::Identity(6,6) - K * H) * P[prev_index];
+        X[prev_idx] = X[prev_idx] + K * Y;
+        P[prev_idx] = (matrix6d::Identity(6,6) - K * H) * P[prev_idx];
     }
 }
 
@@ -226,7 +232,9 @@ static void erase_from_vector(std::vector<T> &v, int index)
 void LidarTracker::RemoveTrack(int index)
 {
     erase_from_vector(X, index);
+    erase_from_vector(X_, index);
     erase_from_vector(P, index);
+    erase_from_vector(P_, index);
     erase_from_vector(track_info, index);
 }
 
@@ -311,8 +319,10 @@ void LidarTracker::GetLidarTrack(std::vector<LocalTrack>& tracks){
     for(int i=0; i<size; ++i){
         if(track_info[i].confidence < LIDAR_MIN_CONFIDENCE) continue;
         if (!IsConverged(i))  continue;
-        track.X = X[i];
-        track.P = P[i];
+        track.X  = X[i];
+        track.X_ = X_[i];
+        track.P  = P[i];
+        track.P_ = P_[i];
         track.width = track_info[i].width;
         tracks.push_back(track);
     }
