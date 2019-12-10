@@ -11,7 +11,7 @@
   <!--lidar ROI width-->
   <arg name="ROI_width" default="5.5" />
   <!--lidar ROI length-->
-  <arg name="ROI_length" default="23.0" />
+  <arg name="ROI_length" default="22.0" />
 
   <!--连接VLP16-->
   <include file="$(find velodyne_pointcloud)/launch/VLP16_points.launch" />

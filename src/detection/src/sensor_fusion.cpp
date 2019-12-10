@@ -46,7 +46,6 @@ void SensorFusion::Run(void)
 {
     // clock_t start = clock();
     GetLocalTracks();
-
     if (!X.size())
     {
       for (auto &pair : local_matched_pair)
