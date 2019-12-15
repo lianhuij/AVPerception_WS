@@ -24,3 +24,7 @@ publish topic :
 - radar_array
 - lidar_array
 - fusion_array
+
+---
+### save bag data
+rosbag record -O file radar_rawArray camera_rawArray lidar_rawArray radar_array lidar_array fusion_array
