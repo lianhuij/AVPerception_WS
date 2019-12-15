@@ -2,6 +2,8 @@
 #define DETECTION_SENSOR_FUSION_H
 
 #include <ros/ros.h>
+#include <detection/Target.h>
+#include <detection/TargetArray.h>
 #include "detection/object.h"
 #include "detection/GNN.h"
 

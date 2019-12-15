@@ -46,6 +46,8 @@ find_package(catkin REQUIRED COMPONENTS roscpp std_msgs message_generation senso
 add_message_files(FILES
   LidarRawArray.msg
   LidarRaw.msg
+  TargetArray.msg
+  Target.msg
 )
 
 ## Generate services in the 'srv' folder

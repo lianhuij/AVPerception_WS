@@ -1,6 +1,7 @@
 #include <ros/ros.h>
 #include <visualization_msgs/Marker.h>
 #include <visualization_msgs/MarkerArray.h>
+#include <detection/TargetArray.h>
 // #include "detection/radar_tracker.h"
 #include "detection/radar_cmkf_tracker.h"
 #include "detection/camera_tracker.h"
@@ -9,7 +10,7 @@
 
 ros::Subscriber radar_sub, camera_sub, lidar_sub;                           // ROS Subscriber
 ros::Publisher radar_ekf_pub, radar_cmkf_pub, camera_kf_pub, lidar_kf_pub,  // ROS Publisher
-               fusion_pub;
+               fusion_od_pub, radar_pub, lidar_pub, fusion_pub;
 std::string FIXED_FRAME;
 float X_OFFSET;
 
@@ -37,7 +38,11 @@ int main(int argc,char** argv)
     radar_cmkf_pub = nh.advertise<visualization_msgs::MarkerArray>("radar_cmkf_rviz", 10);
     camera_kf_pub  = nh.advertise<visualization_msgs::MarkerArray>("camera_kf_rviz", 10);
     lidar_kf_pub   = nh.advertise<visualization_msgs::MarkerArray>("lidar_kf_rviz", 10);
-    fusion_pub     = nh.advertise<visualization_msgs::MarkerArray>("fusion_rviz", 10);
+    fusion_od_pub  = nh.advertise<visualization_msgs::MarkerArray>("fusion_rviz", 10);
+    // radar_pub      = nh.advertise<detection::TargetArray>("radar_ekf_array", 10);
+    radar_pub      = nh.advertise<detection::TargetArray>("radar_array", 10);
+    lidar_pub      = nh.advertise<detection::TargetArray>("lidar_array", 10);
+    fusion_pub     = nh.advertise<detection::TargetArray>("fusion_array", 10);
     
     ros::spin();
     return 0;

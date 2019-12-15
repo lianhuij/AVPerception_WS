@@ -3,6 +3,8 @@
 
 #include <ros/ros.h>
 #include <detection/LidarRawArray.h>
+#include <detection/Target.h>
+#include <detection/TargetArray.h>
 #include "detection/object.h"
 #include "detection/GNN.h"
 

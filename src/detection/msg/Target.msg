@@ -1,0 +1,14 @@
+float32 rx
+float32 ry
+float32 vx
+float32 vy
+float32 ax
+float32 ay
+float32 rx_cov
+float32 ry_cov
+float32 vx_cov
+float32 vy_cov
+float32 ax_cov
+float32 ay_cov
+float32 width
+uint8   type 

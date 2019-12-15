@@ -3,6 +3,8 @@
 
 #include <ros/ros.h>
 #include <raw_data/RadarRawArray.h>
+#include <detection/Target.h>
+#include <detection/TargetArray.h>
 #include "detection/object.h"
 #include "detection/dbscan.h"
 #include "detection/GNN.h"

@@ -4,7 +4,7 @@
 #include "detection/lidar_tracker.h"
 #include "detection/sensor_fusion.h"
 
-extern ros::Publisher lidar_kf_pub;
+extern ros::Publisher lidar_kf_pub, lidar_pub;
 extern std::string FIXED_FRAME;
 extern SensorFusion fusion_tracker;
 
@@ -270,6 +270,9 @@ void LidarTracker::PubLidarTracks(void)
     bbox_marker.frame_locked = true;
     bbox_marker.type = visualization_msgs::Marker::CUBE;
     bbox_marker.action = visualization_msgs::Marker::ADD;
+    detection::TargetArray target_array;
+    detection::Target target;
+    target_array.header.stamp = time_stamp;
 
     int marker_id = 0;
     int track_num = X.size();
@@ -283,7 +286,7 @@ void LidarTracker::PubLidarTracks(void)
             continue;
         }  
 
-        bbox_marker.id = marker_id++;
+        bbox_marker.id = marker_id;
         bbox_marker.pose.position.x = X[i](0);
         bbox_marker.pose.position.y = X[i](1);
         bbox_marker.pose.position.z = -0.9;
@@ -291,7 +294,24 @@ void LidarTracker::PubLidarTracks(void)
         bbox_marker.scale.y = track_info[i].width;
         bbox_marker.scale.z = PED_HEIGHT;
         marker_array.markers.push_back(bbox_marker);
+        target.rx = X[i](0);
+        target.ry = X[i](1);
+        target.vx = X[i](2);
+        target.vy = X[i](3);
+        target.ax = X[i](4);
+        target.ay = X[i](5);
+        target.rx_cov = P[i](0,0);
+        target.ry_cov = P[i](1,1);
+        target.vx_cov = P[i](2,2);
+        target.vy_cov = P[i](3,3);
+        target.ax_cov = P[i](4,4);
+        target.ay_cov = P[i](5,5);
+        target.width  = track_info[i].width;
+        target.type   = track_info[i].type;
+        target_array.data[marker_id] = target;
+        marker_id++;
     }
+    target_array.num = marker_id;
 
     if (marker_array.markers.size() > pre_marker_size_)
     {
@@ -306,6 +326,7 @@ void LidarTracker::PubLidarTracks(void)
     }
     pre_marker_size_ = marker_id;
     lidar_kf_pub.publish(marker_array);
+    lidar_pub.publish(target_array);
 }
 
 void LidarTracker::GetTimeStamp(ros::Time& stamp){

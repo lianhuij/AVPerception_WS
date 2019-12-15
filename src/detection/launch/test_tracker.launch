@@ -14,7 +14,7 @@
   <arg name="ROI_length" default="22.0" />
 
   <!--读bag文件-->
-  <node pkg="rosbag" type="play" name="player" args="$(find record_data)/bagfiles/191112_f10.bag" respawn="true" />    
+  <node pkg="rosbag" type="play" name="player" args="$(find record_data)/bagfiles/191112_f6.bag" respawn="true" />    
 
   <!--激光雷达目标点云聚类-->
   <node pkg="detection" type="lidar_cluster_node" name="lidar_cluster_node" output="screen">
@@ -40,7 +40,7 @@
   <!--rviz可视化-->
   <node pkg="rviz" type="rviz" name="rviz" args="-d $(find detection)/rviz/detection.rviz" required="true"/>   
 
-  <!--rqt_plot>
-  <node pkg="rqt_plot" type="rqt_plot" name="rqt_plot" /-->
+  <!--rqt_plot-->
+  <node pkg="rqt_plot" type="rqt_plot" name="rqt_plot" />
 
 </launch>
