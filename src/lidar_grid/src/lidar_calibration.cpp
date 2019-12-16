@@ -198,27 +198,27 @@ void LidarCloudHandler::calibration(const sensor_msgs::PointCloud2ConstPtr& inpu
     pcl_output.header.stamp = input->header.stamp;
     pc_pub.publish(pcl_output);  //发布校正点云
 
-    visualization_msgs::Marker marker;
-    marker.header.frame_id = fixed_frame;
-    marker.header.stamp = input->header.stamp;
-    marker.type = visualization_msgs::Marker::CUBE;
-    marker.action = visualization_msgs::Marker::ADD;
-    marker.pose.position.x = 0;
-    marker.pose.position.y = 0;
-    marker.pose.position.z = -0.9;
-    marker.pose.orientation.x = 0.0;
-    marker.pose.orientation.y = 0.0;
-    marker.pose.orientation.z = 0.0;
-    marker.pose.orientation.w = 1.0;
-    marker.scale.x = 3;
-    marker.scale.y = 1.6;
-    marker.scale.z = 1.6;
-    marker.color.r = 0;
-    marker.color.g = 0;
-    marker.color.b = 0.7;
-    marker.color.a = 0.7;
-    marker.lifetime = ros::Duration();
-    ego_pub.publish(marker);  //发布自车几何形状
+    // visualization_msgs::Marker marker;
+    // marker.header.frame_id = fixed_frame;
+    // marker.header.stamp = input->header.stamp;
+    // marker.type = visualization_msgs::Marker::CUBE;
+    // marker.action = visualization_msgs::Marker::ADD;
+    // marker.pose.position.x = 0;
+    // marker.pose.position.y = 0;
+    // marker.pose.position.z = -0.9;
+    // marker.pose.orientation.x = 0.0;
+    // marker.pose.orientation.y = 0.0;
+    // marker.pose.orientation.z = 0.0;
+    // marker.pose.orientation.w = 1.0;
+    // marker.scale.x = 3;
+    // marker.scale.y = 1.6;
+    // marker.scale.z = 1.6;
+    // marker.color.r = 0;
+    // marker.color.g = 0;
+    // marker.color.b = 0.7;
+    // marker.color.a = 0.7;
+    // marker.lifetime = ros::Duration();
+    // ego_pub.publish(marker);  //发布自车几何形状
     clock_t end = clock();
     std_msgs::Float32 cali_time;
     cali_time.data = (float)(end-start)*1000/(float)CLOCKS_PER_SEC;  //程序用时 ms

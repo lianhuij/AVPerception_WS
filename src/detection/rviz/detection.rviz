@@ -104,29 +104,29 @@ Visualization Manager:
       Queue Size: 100
       Value: false
     - Class: rviz/MarkerArray
-      Enabled: true
+      Enabled: false
       Marker Topic: /lidar_kf_rviz
       Name: MarkerArray
       Namespaces:
-        "": true
+        {}
       Queue Size: 100
-      Value: true
+      Value: false
     - Class: rviz/MarkerArray
-      Enabled: true
+      Enabled: false
       Marker Topic: /radar_cmkf_rviz
       Name: MarkerArray
       Namespaces:
-        "": true
+        {}
       Queue Size: 100
-      Value: true
+      Value: false
     - Class: rviz/MarkerArray
-      Enabled: true
+      Enabled: false
       Marker Topic: /camera_kf_rviz
       Name: MarkerArray
       Namespaces:
-        "": true
+        {}
       Queue Size: 100
-      Value: true
+      Value: false
     - Class: rviz/MarkerArray
       Enabled: true
       Marker Topic: /fusion_rviz
@@ -134,6 +134,13 @@ Visualization Manager:
       Namespaces:
         "": true
       Queue Size: 100
+      Value: true
+    - Alpha: 1
+      Class: rviz/GridCells
+      Color: 25; 255; 0
+      Enabled: true
+      Name: GridCells
+      Topic: /grid_cell
       Value: true
   Enabled: true
   Global Options:
@@ -167,18 +174,18 @@ Visualization Manager:
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 12.7199898
-        Y: -0.803931177
-        Z: -4.63465214
+        X: 9.25380135
+        Y: -0.572644234
+        Z: -6.13075113
       Focal Shape Fixed Size: false
       Focal Shape Size: 0.0500000007
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.00999999978
-      Pitch: 0.65979749
+      Pitch: 0.869797289
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 2.24965429
+      Yaw: 2.38464689
     Saved:
       - Class: rviz/Orbit
         Distance: 16.5528126
