@@ -351,7 +351,7 @@ void RadarCMKFTracker::PubRadarTracks(void)
         bbox_marker.scale.y = PED_WIDTH;
         bbox_marker.scale.z = PED_HEIGHT;
         marker_array.markers.push_back(bbox_marker);
-        target.rx = X[i](0);
+        target.rx = X[i](0) + X_OFFSET;   // add offset, convert to velodyne frame
         target.ry = X[i](1);
         target.vx = X[i](2);
         target.vy = X[i](3);
