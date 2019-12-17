@@ -44,12 +44,11 @@ find_package(catkin REQUIRED COMPONENTS roscpp std_msgs message_generation senso
 
 ## Generate messages in the 'msg' folder
 add_message_files(FILES
-  RearRadarRawArray.msg
-  RearRadarRaw.msg
   CameraRawArray.msg
   RadarRawArray.msg
   CameraRaw.msg
   RadarRaw.msg
+  Ultrasonic.msg
 )
 
 ## Generate services in the 'srv' folder

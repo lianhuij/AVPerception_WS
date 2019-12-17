@@ -13,8 +13,11 @@ publish topic :
 receive topic : received messages
 
 publish topic :
-- rear_radar_raw_rviz
-- rear_radar_rawArray
+- right_radar_raw_rviz
+- left_radar_raw_rviz
+- right_radar_rawArray
+- left_radar_rawArray
+- ultrasonic
 ---
 ### connect kvaser can
 sudo modprobe kvaser_usb  
