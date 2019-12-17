@@ -1,16 +1,19 @@
 <launch>
 
   <!--rviz中的fixed frame-->
-  <arg name="fixed_frame" default="velodyne" />
+  <arg name="fixed_frame" default="rear" />
+  <!--两后雷达间距-->
+  <arg name="GAP" default=0.45 />
   
   <!--接收MPC单片机CAN消息-->
   <node pkg="socketcan_bridge" type="socketcan_to_topic_node" name="socketcan_to_topic_node" />
   <node pkg="raw_data" type="rear_raw_node" name="rear_raw_node" >
     <param name="fixed_frame" value="$(arg fixed_frame)" />
+    <param name="GAP" value="$(arg GAP)" />
   </node>
 
   <!--rviz可视化-->
-  <node pkg="rviz" type="rviz" name="rviz" args="-d $(find raw_data)/rviz/raw_data.rviz" required="true"/>   
+  <node pkg="rviz" type="rviz" name="rviz" args="-d $(find raw_data)/rviz/rear_data.rviz" required="true"/>   
 
   <!--rqt_plot显示曲线-->
   <node pkg="rqt_plot" type="rqt_plot" name="rqt_plot" />
