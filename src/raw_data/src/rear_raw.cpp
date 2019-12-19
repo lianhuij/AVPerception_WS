@@ -5,7 +5,8 @@
 #include <visualization_msgs/MarkerArray.h>
 #include <raw_data/RadarRaw.h>
 #include <raw_data/RadarRawArray.h>
-#include <raw_data/Ultrasonic.h>
+#include <raw_data/Ultrasonic1_4.h>
+#include <raw_data/Ultrasonic5_8.h>
 #include <vector>
 
 rearDataHandler::rearDataHandler(void){
@@ -14,7 +15,8 @@ rearDataHandler::rearDataHandler(void){
     left_radar_raw_pub = nh.advertise<visualization_msgs::MarkerArray>("left_radar_raw_rviz", 10);   //发布话题：left_radar_raw_rviz
     right_radar_rawArray_pub = nh.advertise<raw_data::RadarRawArray>("right_radar_rawArray", 10);  //发布话题：right_radar_rawArray
     left_radar_rawArray_pub = nh.advertise<raw_data::RadarRawArray>("left_radar_rawArray", 10);  //发布话题：left_radar_rawArray
-    ultrasonic_pub = nh.advertise<raw_data::Ultrasonic>("ultrasonic", 10);  //发布话题：ultrasonic
+    ultrasonic1_4_pub = nh.advertise<raw_data::Ultrasonic1_4>("ultrasonic1_4", 10);  //发布话题：ultrasonic1_4
+    ultrasonic5_8_pub = nh.advertise<raw_data::Ultrasonic5_8>("ultrasonic5_8", 10);  //发布话题：ultrasonic5_8
     nh.getParam("/rear_raw_node/fixed_frame", fixed_frame);
     nh.getParam("/rear_raw_node/GAP", GAP);
 }
@@ -121,13 +123,22 @@ void rearDataHandler::canHandler(const can_msgs::Frame& input)
     }
 //////////////////////////////解析CAN消息 ultrasonic///////////////////////////////
     if(input.id == 0x617){
-        raw_data::Ultrasonic probe;
+        raw_data::Ultrasonic1_4 probe;
         probe.header.stamp = ros::Time::now();
         probe.probe_01 = (float)(input.data[0]*100 + input.data[1])/1000.0;
         probe.probe_02 = (float)(input.data[2]*100 + input.data[3])/1000.0;
         probe.probe_03 = (float)(input.data[4]*100 + input.data[5])/1000.0;
         probe.probe_04 = (float)(input.data[6]*100 + input.data[7])/1000.0;
-        ultrasonic_pub.publish(probe);
+        ultrasonic1_4_pub.publish(probe);
+    }
+    if(input.id == 0x618){
+        raw_data::Ultrasonic5_8 probe;
+        probe.header.stamp = ros::Time::now();
+        probe.probe_05 = (float)(input.data[0]*100 + input.data[1])/1000.0;
+        probe.probe_06 = (float)(input.data[2]*100 + input.data[3])/1000.0;
+        probe.probe_07 = (float)(input.data[4]*100 + input.data[5])/1000.0;
+        probe.probe_08 = (float)(input.data[6]*100 + input.data[7])/1000.0;
+        ultrasonic5_8_pub.publish(probe);
     }
 }
 

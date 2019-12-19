@@ -3,7 +3,7 @@
   <!--rviz中的fixed frame-->
   <arg name="fixed_frame" default="rear" />
   <!--两后雷达间距-->
-  <arg name="GAP" default=0.45 />
+  <arg name="GAP" default="0.225" />
   
   <!--接收MPC单片机CAN消息-->
   <node pkg="socketcan_bridge" type="socketcan_to_topic_node" name="socketcan_to_topic_node" />

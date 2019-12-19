@@ -48,7 +48,8 @@ add_message_files(FILES
   RadarRawArray.msg
   CameraRaw.msg
   RadarRaw.msg
-  Ultrasonic.msg
+  Ultrasonic1_4.msg
+  Ultrasonic5_8.msg
 )
 
 ## Generate services in the 'srv' folder

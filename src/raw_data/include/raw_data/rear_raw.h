@@ -18,7 +18,8 @@ protected:
     ros::Publisher right_radar_rawArray_pub;
     ros::Publisher left_radar_raw_pub;
     ros::Publisher left_radar_rawArray_pub;
-    ros::Publisher ultrasonic_pub;
+    ros::Publisher ultrasonic1_4_pub;
+    ros::Publisher ultrasonic5_8_pub;
     ros::Time right_radar_stamp;
     ros::Time left_radar_stamp;
     ros::Time ultrasonic_stamp;

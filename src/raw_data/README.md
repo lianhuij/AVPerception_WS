@@ -17,7 +17,8 @@ publish topic :
 - left_radar_raw_rviz
 - right_radar_rawArray
 - left_radar_rawArray
-- ultrasonic
+- ultrasonic1_4
+- ultrasonic5_8
 ---
 ### connect kvaser can
 sudo modprobe kvaser_usb  
@@ -25,4 +26,4 @@ sudo ip link set can0 up type can bitrate 500000
 
 ---
 ### save bag data
-rosbag record -O file velodyne_points received_messages
+rosbag record -O file.bag velodyne_points received_messages
