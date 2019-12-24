@@ -3,7 +3,7 @@
   <!--rviz中的fixed frame-->
   <arg name="fixed_frame" default="rear" />
   <!--两后雷达间距-->
-  <arg name="GAP" default=0.45 />
+  <arg name="GAP" default="0.225" />
 
   <!--读bag文件-->
   <node pkg="rosbag" type="play" name="player" args="$(find record_data)/bagfiles/191108_r1.bag" />    
