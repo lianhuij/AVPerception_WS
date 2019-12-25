@@ -17,8 +17,8 @@ publish topic :
 - left_radar_raw_rviz
 - right_radar_rawArray
 - left_radar_rawArray
-- ultrasonic1_4
-- ultrasonic5_8
+- ultrasonic1_4_raw
+- ultrasonic5_8_raw
 ---
 ### connect kvaser can
 sudo modprobe kvaser_usb  

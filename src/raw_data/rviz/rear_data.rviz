@@ -5,6 +5,7 @@ Panels:
     Property Tree Widget:
       Expanded:
         - /Global Options1
+        - /Grid1
         - /PointCloud21
         - /MarkerArray1
         - /MarkerArray2
@@ -38,8 +39,8 @@ Visualization Manager:
     - Alpha: 1
       Cell Size: 1
       Class: rviz/Grid
-      Color: 255; 0; 0
-      Enabled: false
+      Color: 255; 200; 0
+      Enabled: true
       Line Style:
         Line Width: 0.0299999993
         Value: Billboards
@@ -50,9 +51,9 @@ Visualization Manager:
         Y: 0
         Z: 0
       Plane: XY
-      Plane Cell Count: 2
+      Plane Cell Count: 10
       Reference Frame: <Fixed Frame>
-      Value: false
+      Value: true
     - Alpha: 0.800000012
       Autocompute Intensity Bounds: true
       Autocompute Value Bounds:
@@ -139,25 +140,25 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 38.7312088
+      Distance: 28.3629932
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.0599999987
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 11.4204874
-        Y: -1.10417795
-        Z: -4.61267996
+        X: 9.18580151
+        Y: -1.71079147
+        Z: -6.36316586
       Focal Shape Fixed Size: false
       Focal Shape Size: 0.0500000007
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.00999999978
-      Pitch: 0.939797282
+      Pitch: 1.03979719
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 3.00966454
+      Yaw: 2.85466218
     Saved:
       - Class: rviz/Orbit
         Distance: 16.5528126

@@ -3,15 +3,15 @@
   <!--rviz中的fixed frame-->
   <arg name="fixed_frame" default="rear" />
   <!--两后雷达间距-->
-  <arg name="GAP" default="0.225" />
+  <arg name="y_offset" default="0" />
 
   <!--读bag文件-->
-  <node pkg="rosbag" type="play" name="player" args="$(find record_data)/bagfiles/191108_r1.bag" />    
+  <node pkg="rosbag" type="play" name="player" args="$(find record_data)/bagfiles/191224.bag" respawn="true"/>    
 
   <!--接收MPC单片机后雷达CAN消息-->
   <node pkg="raw_data" type="rear_raw_node" name="rear_raw_node" output="screen">
     <param name="fixed_frame" value="$(arg fixed_frame)" />
-    <param name="GAP" value="$(arg GAP)" />
+    <param name="y_offset" value="$(arg y_offset)" />
   </node>
 
   <!--rviz可视化-->

@@ -24,7 +24,7 @@ protected:
     ros::Time left_radar_stamp;
     ros::Time ultrasonic_stamp;
     std::string fixed_frame;
-    float GAP;
+    float Y_OFFSET;
     std::vector<raw_data::RadarRaw> right_radar;
     std::vector<raw_data::RadarRaw> left_radar;
 

@@ -15,10 +15,10 @@ rearDataHandler::rearDataHandler(void){
     left_radar_raw_pub = nh.advertise<visualization_msgs::MarkerArray>("left_radar_raw_rviz", 10);   //发布话题：left_radar_raw_rviz
     right_radar_rawArray_pub = nh.advertise<raw_data::RadarRawArray>("right_radar_rawArray", 10);  //发布话题：right_radar_rawArray
     left_radar_rawArray_pub = nh.advertise<raw_data::RadarRawArray>("left_radar_rawArray", 10);  //发布话题：left_radar_rawArray
-    ultrasonic1_4_pub = nh.advertise<raw_data::Ultrasonic1_4>("ultrasonic1_4", 10);  //发布话题：ultrasonic1_4
-    ultrasonic5_8_pub = nh.advertise<raw_data::Ultrasonic5_8>("ultrasonic5_8", 10);  //发布话题：ultrasonic5_8
+    ultrasonic1_4_pub = nh.advertise<raw_data::Ultrasonic1_4>("ultrasonic1_4_raw", 10);  //发布话题：ultrasonic1_4_raw
+    ultrasonic5_8_pub = nh.advertise<raw_data::Ultrasonic5_8>("ultrasonic5_8_raw", 10);  //发布话题：ultrasonic5_8_raw
     nh.getParam("/rear_raw_node/fixed_frame", fixed_frame);
-    nh.getParam("/rear_raw_node/GAP", GAP);
+    nh.getParam("/rear_raw_node/y_offset", Y_OFFSET);
 }
 
 rearDataHandler::~rearDataHandler(){ }
@@ -67,7 +67,7 @@ void rearDataHandler::canHandler(const can_msgs::Frame& input)
             radar_pos.speed = (radar_pos.speed - 0x10000)/8.0;
         }
         radar_pos.x = radar_pos.distance*cos(radar_pos.angle*M_PI/180);
-        radar_pos.y = radar_pos.distance*sin(radar_pos.angle*M_PI/180) - GAP;
+        radar_pos.y = radar_pos.distance*sin(radar_pos.angle*M_PI/180) - Y_OFFSET;
         right_radar.push_back(radar_pos);
         right_radar_num--;
         if(right_radar_num == 0){   //接收完本周期数据
@@ -112,7 +112,7 @@ void rearDataHandler::canHandler(const can_msgs::Frame& input)
             radar_pos.speed = (radar_pos.speed - 0x10000)/8.0;
         }
         radar_pos.x = radar_pos.distance*cos(radar_pos.angle*M_PI/180);
-        radar_pos.y = radar_pos.distance*sin(radar_pos.angle*M_PI/180) + GAP;
+        radar_pos.y = radar_pos.distance*sin(radar_pos.angle*M_PI/180) + Y_OFFSET;
         left_radar.push_back(radar_pos);
         left_radar_num--;
         if(left_radar_num == 0){   //接收完本周期数据
@@ -130,6 +130,7 @@ void rearDataHandler::canHandler(const can_msgs::Frame& input)
         probe.probe_03 = (float)(input.data[4]*100 + input.data[5])/1000.0;
         probe.probe_04 = (float)(input.data[6]*100 + input.data[7])/1000.0;
         ultrasonic1_4_pub.publish(probe);
+        return;
     }
     if(input.id == 0x618){
         raw_data::Ultrasonic5_8 probe;
@@ -139,6 +140,7 @@ void rearDataHandler::canHandler(const can_msgs::Frame& input)
         probe.probe_07 = (float)(input.data[4]*100 + input.data[5])/1000.0;
         probe.probe_08 = (float)(input.data[6]*100 + input.data[7])/1000.0;
         ultrasonic5_8_pub.publish(probe);
+        return;
     }
 }
 
