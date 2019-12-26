@@ -26,5 +26,23 @@ publish topic :
 - fusion_array
 
 ---
+### node : rear_tracker_node
+
+receive topic :  
+- left_radar_rawArray
+- right_radar_rawArray
+- left_ultrasonic_raw
+- right_ultrasonic_raw
+
+publish topic :  
+- left_radar_rviz
+- right_radar_rviz
+- left_radar_array
+- right_radar_array 
+- left_ultrasonic
+- right_ultrasonic
+- radar_fusion_array
+
 ### save bag data
-rosbag record -O file radar_rawArray camera_rawArray lidar_rawArray radar_array lidar_array fusion_array
+- rosbag record -O file.bag radar_rawArray camera_rawArray lidar_rawArray radar_array lidar_array fusion_array
+- rosbag record -O file.bag -a

@@ -1,0 +1,29 @@
+<launch>
+
+  <!--rviz中的fixed frame-->
+  <arg name="fixed_frame" default="rear" />
+  <!--radar x方向偏移量-->
+  <arg name="y_offset" default="0" />
+
+  <!--读bag文件-->
+  <node pkg="rosbag" type="play" name="player" args="$(find record_data)/bagfiles/191112_f6.bag" respawn="true" />    
+
+  <!--接收MPC单片机CAN消息-->
+  <node pkg="raw_data" type="rear_raw_node" name="rear_raw_node" output="screen">
+    <param name="fixed_frame" value="$(arg fixed_frame)" />
+    <param name="y_offset" value="$(arg y_offset)" />
+  </node>
+
+  <!--目标跟踪模块-->
+  <node pkg="detection" type="rear_tracker_node" name="rear_tracker_node" output="screen">
+    <param name="fixed_frame" value="$(arg fixed_frame)" />
+    <param name="y_offset" value="$(arg y_offset)" />
+  </node>
+
+  <!--rviz可视化-->
+  <node pkg="rviz" type="rviz" name="rviz" args="-d $(find detection)/rviz/rear_detection.rviz" required="true"/>   
+
+  <!--rqt_plot-->
+  <node pkg="rqt_plot" type="rqt_plot" name="rqt_plot" />
+
+</launch>

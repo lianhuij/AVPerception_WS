@@ -35,7 +35,6 @@ public:
     void GetTimeStamp(ros::Time& stamp);
     void GetRadarTrack(std::vector<LocalTrack>& tracks);
 
-private:
     std::vector<vector6d> X, X_;  // rx ry vx vy ax ay
     std::vector<matrix6d> P, P_;
     std::vector<ObjectInfo> track_info;
