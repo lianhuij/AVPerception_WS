@@ -26,4 +26,5 @@ sudo ip link set can0 up type can bitrate 500000
 
 ---
 ### save bag data
-rosbag record -O file.bag velodyne_points received_messages
+rosbag record -O file.bag velodyne_points received_messages  
+rosbag record -O file.bag received_messages

@@ -30,7 +30,7 @@ void rearDataHandler::canHandler(const can_msgs::Frame& input)
     static bool right_radar_head = true;
     static bool left_radar_head = true;
 //////////////////////////////解析CAN消息 SRR///////////////////////////////
-    //右雷达，右模式，无静态目标
+    //右雷达，后模式
     if(input.id == 0x580){
         right_radar_num = input.data[0];
         right_radar_stamp = ros::Time::now();
@@ -75,7 +75,7 @@ void rearDataHandler::canHandler(const can_msgs::Frame& input)
         }
         return;
     }
-    //左雷达，后模式，有静态目标
+    //左雷达，后模式
     if(input.id == 0x590){
         left_radar_num = input.data[0];
         left_radar_stamp = ros::Time::now();
@@ -121,24 +121,22 @@ void rearDataHandler::canHandler(const can_msgs::Frame& input)
         return;
     }
 //////////////////////////////解析CAN消息 ultrasonic///////////////////////////////
-    if(input.id == 0x617){
+    if(input.id == 0x617 || input.id == 0x618){
         raw_data::Ultrasonic raw;
         raw.header.stamp = ros::Time::now();
-        raw.probe[0] = (float)(input.data[0]*100 + input.data[1])/1000.0;
-        raw.probe[1] = (float)(input.data[2]*100 + input.data[3])/1000.0;
-        raw.probe[2] = (float)(input.data[4]*100 + input.data[5])/1000.0;
-        raw.probe[3] = (float)(input.data[6]*100 + input.data[7])/1000.0;
-        left_ultrasonic_pub.publish(raw);
-        return;
-    }
-    if(input.id == 0x618){
-        raw_data::Ultrasonic raw;
-        raw.header.stamp = ros::Time::now();
-        raw.probe[0] = (float)(input.data[0]*100 + input.data[1])/1000.0;
-        raw.probe[1] = (float)(input.data[2]*100 + input.data[3])/1000.0;
-        raw.probe[2] = (float)(input.data[4]*100 + input.data[5])/1000.0;
-        raw.probe[3] = (float)(input.data[6]*100 + input.data[7])/1000.0;
-        right_ultrasonic_pub.publish(raw);
+        char x[8];
+        for(int i=0; i<8; ++i){
+            x[i] = ((input.data[i] & 0xF0) >> 4)*10 + (input.data[i] & 0x0F);
+        }
+        raw.probe[0] = (float)(x[0]*100 + x[1])/1000.0;
+        raw.probe[1] = (float)(x[2]*100 + x[3])/1000.0;
+        raw.probe[2] = (float)(x[4]*100 + x[5])/1000.0;
+        raw.probe[3] = (float)(x[6]*100 + x[7])/1000.0;
+        if(input.id == 0x617){
+            left_ultrasonic_pub.publish(raw);
+        }else if(input.id == 0x618){
+            right_ultrasonic_pub.publish(raw);
+        }
         return;
     }
 }
@@ -169,7 +167,7 @@ void rearDataHandler::pubRightRadarRaw(const std::vector<raw_data::RadarRaw>& in
         bbox_marker.id = marker_id;
         bbox_marker.pose.position.x = input[i].x;
         bbox_marker.pose.position.y = input[i].y;
-        bbox_marker.pose.position.z = -0.9;
+        bbox_marker.pose.position.z = 0;
         bbox_marker.scale.x = 0.6;
         bbox_marker.scale.y = 0.6;
         bbox_marker.scale.z = 1.7;
@@ -220,7 +218,7 @@ void rearDataHandler::pubLeftRadarRaw(const std::vector<raw_data::RadarRaw>& inp
         bbox_marker.id = marker_id;
         bbox_marker.pose.position.x = input[i].x;
         bbox_marker.pose.position.y = input[i].y;
-        bbox_marker.pose.position.z = -0.9;
+        bbox_marker.pose.position.z = 0;
         bbox_marker.scale.x = 0.6;
         bbox_marker.scale.y = 0.6;
         bbox_marker.scale.z = 1.7;

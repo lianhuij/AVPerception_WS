@@ -51,7 +51,7 @@ Visualization Manager:
         Y: 0
         Z: 0
       Plane: XY
-      Plane Cell Count: 10
+      Plane Cell Count: 40
       Reference Frame: <Fixed Frame>
       Value: true
     - Alpha: 0.800000012
@@ -140,25 +140,25 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 28.3629932
+      Distance: 32.757618
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.0599999987
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 9.18580151
-        Y: -1.71079147
-        Z: -6.36316586
+        X: 9.83012104
+        Y: -1.41845596
+        Z: -5.64964056
       Focal Shape Fixed Size: false
       Focal Shape Size: 0.0500000007
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.00999999978
-      Pitch: 1.03979719
+      Pitch: 0.954797268
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 2.85466218
+      Yaw: 2.10464859
     Saved:
       - Class: rviz/Orbit
         Distance: 16.5528126
