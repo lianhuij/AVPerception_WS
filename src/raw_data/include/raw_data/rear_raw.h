@@ -18,12 +18,14 @@ protected:
     ros::Publisher right_radar_rawArray_pub;
     ros::Publisher left_radar_raw_pub;
     ros::Publisher left_radar_rawArray_pub;
+    ros::Publisher ultrasonic_ctrl_pub;
     ros::Publisher left_ultrasonic_pub;
     ros::Publisher right_ultrasonic_pub;
     ros::Time right_radar_stamp;
     ros::Time left_radar_stamp;
     std::string fixed_frame;
     float Y_OFFSET;
+    int ultrasonic_mode;
     std::vector<raw_data::RadarRaw> right_radar;
     std::vector<raw_data::RadarRaw> left_radar;
 
