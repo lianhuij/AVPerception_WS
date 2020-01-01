@@ -22,6 +22,7 @@ void UltrasonicFilter::KF(const raw_data::Ultrasonic& input)
     for(int i=0; i<4; ++i){
       raw.probe[i] = input.probe[i];
     }
+    time_stamp = ros::Time::now();
 
     if (X[0] < 0)
     {
@@ -68,6 +69,7 @@ void UltrasonicFilter::PubUltrasonic(void)
     for(int i=0; i<4; ++i){
       probe.probe[i] = X[i];
     }
+    probe.header.stamp = time_stamp;
     if(this == left_ultrasonic_ptr){
       left_ultrasonic_pub.publish(probe);
       return;

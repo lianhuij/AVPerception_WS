@@ -22,6 +22,7 @@ private:
     float init_P;
     float Q;
     float R;
+    ros::Time time_stamp;
 };
 
 #endif // DETECTION_ULTRASONIC_FILTER_H

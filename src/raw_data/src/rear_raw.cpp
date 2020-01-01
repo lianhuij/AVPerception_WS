@@ -17,9 +17,9 @@ rearDataHandler::rearDataHandler(void){
     left_ultrasonic_pub = nh.advertise<raw_data::Ultrasonic>("left_ultrasonic_raw", 10);  //发布话题：left_ultrasonic_raw
     right_ultrasonic_pub = nh.advertise<raw_data::Ultrasonic>("right_ultrasonic_raw", 10);  //发布话题：right_ultrasonic_raw
     ultrasonic_ctrl_pub = nh.advertise<can_msgs::Frame>("sent_messages", 10);
-    nh.getParam("/rear_raw_node/fixed_frame", fixed_frame);
-    nh.getParam("/rear_raw_node/y_offset", Y_OFFSET);
-    nh.getParam("/rear_raw_node/ultrasonic_mode", ultrasonic_mode);
+    nh.param<std::string>("/rear_raw_node/fixed_frame", fixed_frame, "rear");
+    nh.param<float>("/rear_raw_node/y_offset", Y_OFFSET, 0.225);
+    nh.param<int>("/rear_raw_node/ultrasonic_mode", ultrasonic_mode, 0xb5);
 }
 
 rearDataHandler::~rearDataHandler(){ }
@@ -43,7 +43,7 @@ void rearDataHandler::canHandler(const can_msgs::Frame& input)
             std::vector<raw_data::RadarRaw> no_radar_obj;
             pubRightRadarRaw(no_radar_obj);
         }
-        nh.getParam("/rear_raw_node/ultrasonic_mode", ultrasonic_mode);
+        nh.param<int>("/rear_raw_node/ultrasonic_mode", ultrasonic_mode, 0xb5);
         can_msgs::Frame f;
         f.id = 0x601;
         f.dlc = 3;
