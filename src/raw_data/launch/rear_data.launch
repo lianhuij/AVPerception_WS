@@ -3,7 +3,7 @@
   <!--rviz中的fixed frame-->
   <arg name="fixed_frame" default="rear" />
   <!--两后雷达间距-->
-  <arg name="y_offset" default="0.225" />
+  <arg name="y_offset" default="0.20" />
   <!--超声波雷达模式-->
   <!--0xb1， 2.0m外， 盲区290mm-->
   <!--0xb3， 2.0m内， 盲区250mm-->
@@ -16,6 +16,8 @@
   <node pkg="raw_data" type="rear_raw_node" name="rear_raw_node" >
     <param name="fixed_frame" value="$(arg fixed_frame)" />
     <param name="y_offset" value="$(arg y_offset)" />
+  </node>
+  <node pkg="raw_data" type="ultrasonic_activate_node" name="ultrasonic_activate_node" >
     <param name="ultrasonic_mode" value="$(arg ultrasonic_mode)" />
   </node>
 
@@ -23,6 +25,7 @@
   <node pkg="rviz" type="rviz" name="rviz" args="-d $(find raw_data)/rviz/rear_data.rviz" required="true"/>   
 
   <!--rqt_plot显示曲线-->
-  <node pkg="rqt_plot" type="rqt_plot" name="rqt_plot" />
+  <node pkg="rqt_plot" type="rqt_plot" name="rqt_plot1" />
+  <node pkg="rqt_plot" type="rqt_plot" name="rqt_plot2" />
 
 </launch>

@@ -31,7 +31,6 @@ protected:
     ros::Publisher pc_pub;
     ros::Publisher lidar_rviz_pub;
     ros::Publisher lidar_rawArray_pub;
-    ros::Publisher ego_pub;
     std::string fixed_frame;
     float ROI_width;          //感兴趣区域宽度
     float ROI_length;         //感兴趣区域长度
@@ -45,7 +44,6 @@ public:
         pc_pub   = nh.advertise<sensor_msgs::PointCloud2>("no_ground_pc", 1);                //发布话题：no_ground_pc
         lidar_rviz_pub = nh.advertise<visualization_msgs::MarkerArray>("lidar_raw_rviz", 10);
         lidar_rawArray_pub = nh.advertise<detection::LidarRawArray>("lidar_rawArray", 10);
-        ego_pub = nh.advertise<visualization_msgs::Marker>("ego_car", 1);
 
         nh.getParam("/lidar_cluster_node/fixed_frame", fixed_frame);
         nh.getParam("/lidar_cluster_node/ROI_width", ROI_width);
@@ -164,28 +162,6 @@ void LidarClusterHandler::cluster(const sensor_msgs::PointCloud2ConstPtr& input)
     }
     lidar_rawArray_pub.publish(raw_array);
     PublidarPed(raw_array);
-
-    visualization_msgs::Marker marker;
-    marker.header.frame_id = fixed_frame;
-    marker.header.stamp = input->header.stamp;
-    marker.type = visualization_msgs::Marker::CUBE;
-    marker.action = visualization_msgs::Marker::ADD;
-    marker.pose.position.x = 0;
-    marker.pose.position.y = 0;
-    marker.pose.position.z = -0.9;
-    marker.pose.orientation.x = 0.0;
-    marker.pose.orientation.y = 0.0;
-    marker.pose.orientation.z = 0.0;
-    marker.pose.orientation.w = 1.0;
-    marker.scale.x = 3;
-    marker.scale.y = 1.6;
-    marker.scale.z = 1.6;
-    marker.color.r = 0;
-    marker.color.g = 0;
-    marker.color.b = 0.7;
-    marker.color.a = 0.7;
-    marker.lifetime = ros::Duration();
-    ego_pub.publish(marker);  //发布自车几何形状
     // clock_t end = clock();
     // float duration_ms = (float)(end-start)*1000/(float)CLOCKS_PER_SEC;  //程序用时 ms
     // std::cout << "duration(ms) = " << duration_ms << std::endl;

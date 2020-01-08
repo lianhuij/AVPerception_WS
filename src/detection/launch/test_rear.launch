@@ -3,10 +3,10 @@
   <!--rviz中的fixed frame-->
   <arg name="fixed_frame" default="rear" />
   <!--radar x方向偏移量-->
-  <arg name="y_offset" default="0" />
+  <arg name="y_offset" default="0.20" />
 
   <!--读bag文件-->
-  <node pkg="rosbag" type="play" name="player" args="$(find record_data)/bagfiles/191226_r3.bag" respawn="true" />    
+  <node pkg="rosbag" type="play" name="player" args="$(find record_data)/bagfiles/200107_u1.bag" respawn="true" />    
 
   <!--接收MPC单片机CAN消息-->
   <node pkg="raw_data" type="rear_raw_node" name="rear_raw_node" output="screen">
@@ -24,6 +24,7 @@
   <node pkg="rviz" type="rviz" name="rviz" args="-d $(find detection)/rviz/rear_detection.rviz" required="true"/>   
 
   <!--rqt_plot-->
-  <node pkg="rqt_plot" type="rqt_plot" name="rqt_plot" />
+  <node pkg="rqt_plot" type="rqt_plot" name="rqt_plot1" />
+  <node pkg="rqt_plot" type="rqt_plot" name="rqt_plot2" />
 
 </launch>

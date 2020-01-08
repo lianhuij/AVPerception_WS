@@ -217,3 +217,11 @@ add_dependencies(rear_raw_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPO
 target_link_libraries(rear_raw_node
   ${catkin_LIBRARIES}
 )
+
+add_executable(ultrasonic_activate_node
+  src/ultrasonic_activate_node.cpp
+)
+add_dependencies(ultrasonic_activate_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+target_link_libraries(ultrasonic_activate_node
+  ${catkin_LIBRARIES}
+)

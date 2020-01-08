@@ -9,17 +9,15 @@
 #include <vector>
 
 rearDataHandler::rearDataHandler(void){
-    can_sub = nh.subscribe("received_messages", 30, &rearDataHandler::canHandler, this);        //接收话题：received_messages
+    can_sub = nh.subscribe("received_messages", 50, &rearDataHandler::canHandler, this);        //接收话题：received_messages
     right_radar_raw_pub = nh.advertise<visualization_msgs::MarkerArray>("right_radar_raw_rviz", 10);   //发布话题：right_radar_raw_rviz
     left_radar_raw_pub = nh.advertise<visualization_msgs::MarkerArray>("left_radar_raw_rviz", 10);   //发布话题：left_radar_raw_rviz
     right_radar_rawArray_pub = nh.advertise<raw_data::RadarRawArray>("right_radar_rawArray", 10);  //发布话题：right_radar_rawArray
     left_radar_rawArray_pub = nh.advertise<raw_data::RadarRawArray>("left_radar_rawArray", 10);  //发布话题：left_radar_rawArray
     left_ultrasonic_pub = nh.advertise<raw_data::Ultrasonic>("left_ultrasonic_raw", 10);  //发布话题：left_ultrasonic_raw
     right_ultrasonic_pub = nh.advertise<raw_data::Ultrasonic>("right_ultrasonic_raw", 10);  //发布话题：right_ultrasonic_raw
-    ultrasonic_ctrl_pub = nh.advertise<can_msgs::Frame>("sent_messages", 10);
     nh.param<std::string>("/rear_raw_node/fixed_frame", fixed_frame, "rear");
-    nh.param<float>("/rear_raw_node/y_offset", Y_OFFSET, 0.225);
-    nh.param<int>("/rear_raw_node/ultrasonic_mode", ultrasonic_mode, 0xb5);
+    nh.param<float>("/rear_raw_node/y_offset", Y_OFFSET, 0.20);
 }
 
 rearDataHandler::~rearDataHandler(){ }
@@ -43,15 +41,6 @@ void rearDataHandler::canHandler(const can_msgs::Frame& input)
             std::vector<raw_data::RadarRaw> no_radar_obj;
             pubRightRadarRaw(no_radar_obj);
         }
-        nh.param<int>("/rear_raw_node/ultrasonic_mode", ultrasonic_mode, 0xb5);
-        can_msgs::Frame f;
-        f.id = 0x601;
-        f.dlc = 3;
-        f.is_error = f.is_extended = f.is_rtr = false;
-        f.data[0] = ultrasonic_mode;
-        f.data[1] = 0x10;
-        f.data[2] = 0xff;
-        ultrasonic_ctrl_pub.publish(f);
         return;
     }
     if(!right_radar_head && input.id >= 0x581 && input.id <= 0x58F)

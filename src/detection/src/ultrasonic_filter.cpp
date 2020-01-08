@@ -68,6 +68,9 @@ void UltrasonicFilter::PubUltrasonic(void)
     raw_data::Ultrasonic probe;
     for(int i=0; i<4; ++i){
       probe.probe[i] = X[i];
+      if(probe.probe[i] > 1.50){
+        probe.probe[i] = 1.50;
+      }
     }
     probe.header.stamp = time_stamp;
     if(this == left_ultrasonic_ptr){

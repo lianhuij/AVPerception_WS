@@ -38,7 +38,9 @@
   <arg name="ROI_length" default="22.0" />
 
   <!--读bag文件-->
-  <node pkg="rosbag" type="play" name="player" args="$(find record_data)/bagfiles/191220_f7.bag" respawn="true" />    
+  <node pkg="rosbag" type="play" name="player" args="$(find record_data)/bagfiles/191220_f3.bag" respawn="true" />   
+
+  <node pkg="lidar_grid" type="ego_car_node" name="ego_car" /> 
 
   <!--激光雷达地平面标定-->
   <node pkg="lidar_grid" type="lidar_calibration" name="lidar_calibration" >

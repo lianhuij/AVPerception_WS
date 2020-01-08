@@ -235,3 +235,11 @@ add_dependencies(azimuth_calibration ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catki
 target_link_libraries(azimuth_calibration
   ${catkin_LIBRARIES}
 )
+
+add_executable(ego_car_node
+  src/ego_car_node.cpp
+)
+add_dependencies(ego_car_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+target_link_libraries(ego_car_node
+  ${catkin_LIBRARIES}
+)

@@ -9,6 +9,8 @@
 
   <!--连接VLP16-->
   <include file="$(find velodyne_pointcloud)/launch/VLP16_points.launch" />
+
+  <node pkg="lidar_grid" type="ego_car_node" name="ego_car" />
   
   <!--激光雷达零方位角标定-->
   <node pkg="lidar_grid" type="azimuth_calibration" name="azimuth_calibration" >
