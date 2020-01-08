@@ -1,16 +1,13 @@
 #include <ros/ros.h>
 #include <visualization_msgs/MarkerArray.h>
 #include <detection/TargetArray.h>
-#include "detection/radar_cmkf_tracker.h"
 #include "detection/rear_radar_tracker.h"
 
 ros::Subscriber left_radar_sub, right_radar_sub;                  // ROS Subscriber
 ros::Publisher left_radar_rviz_pub, right_radar_rviz_pub,         // ROS Publisher
-               left_radar_pub, right_radar_pub, radar_fusion_pub,
-               radar_cmkf_pub, radar_pub;
+               left_radar_pub, right_radar_pub, radar_fusion_pub;
 std::string FIXED_FRAME;
 float Y_OFFSET;
-float X_OFFSET;
 
 RearRadarTracker left_radar_tracker;
 RearRadarTracker* left_radar_tracker_ptr = &left_radar_tracker;

@@ -5,11 +5,8 @@ Panels:
     Property Tree Widget:
       Expanded:
         - /Global Options1
-        - /Grid1
-        - /PointCloud21
         - /MarkerArray1
         - /MarkerArray2
-        - /MarkerArray3
       Splitter Ratio: 0.5
     Tree Height: 708
   - Class: rviz/Selection
@@ -54,36 +51,6 @@ Visualization Manager:
       Plane Cell Count: 40
       Reference Frame: <Fixed Frame>
       Value: true
-    - Alpha: 0.800000012
-      Autocompute Intensity Bounds: true
-      Autocompute Value Bounds:
-        Max Value: 18.9419327
-        Min Value: -3.08771706
-        Value: true
-      Axis: Z
-      Channel Name: intensity
-      Class: rviz/PointCloud2
-      Color: 255; 255; 255
-      Color Transformer: FlatColor
-      Decay Time: 0
-      Enabled: true
-      Invert Rainbow: false
-      Max Color: 255; 255; 255
-      Max Intensity: 134
-      Min Color: 0; 0; 0
-      Min Intensity: 0
-      Name: PointCloud2
-      Position Transformer: XYZ
-      Queue Size: 10
-      Selectable: true
-      Size (Pixels): 3
-      Size (m): 0.00999999978
-      Style: Points
-      Topic: /velodyne_points
-      Unreliable: false
-      Use Fixed Frame: true
-      Use rainbow: true
-      Value: true
     - Class: rviz/Axes
       Enabled: true
       Length: 1
@@ -92,19 +59,11 @@ Visualization Manager:
       Reference Frame: <Fixed Frame>
       Value: true
     - Class: rviz/MarkerArray
-      Enabled: false
-      Marker Topic: /rear_radar_raw_rviz
-      Name: MarkerArray
-      Namespaces:
-        {}
-      Queue Size: 100
-      Value: false
-    - Class: rviz/MarkerArray
       Enabled: true
       Marker Topic: /right_radar_raw_rviz
       Name: MarkerArray
       Namespaces:
-        {}
+        "": true
       Queue Size: 100
       Value: true
     - Class: rviz/MarkerArray
@@ -147,18 +106,18 @@ Visualization Manager:
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 9.83012104
-        Y: -1.41845596
-        Z: -5.64964056
+        X: 7.32796335
+        Y: -1.47636318
+        Z: -5.74443245
       Focal Shape Fixed Size: false
       Focal Shape Size: 0.0500000007
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.00999999978
-      Pitch: 0.954797268
+      Pitch: 1.17479706
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 2.10464859
+      Yaw: 1.68464661
     Saved:
       - Class: rviz/Orbit
         Distance: 16.5528126

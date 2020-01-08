@@ -229,7 +229,6 @@ target_link_libraries(lidar_cluster_node
 add_executable(rear_tracker_node
   src/rear_tracker_node.cpp
   src/rear_radar_tracker.cpp
-  src/radar_cmkf_tracker.cpp
 
 )
 add_dependencies(rear_tracker_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})

@@ -73,22 +73,6 @@
     <param name="RANSAC_threshold" value="$(arg RANSAC_threshold)" />
   </node>
 
-  <!--处理点云输出可通行栅格，梯度方法>
-  <node pkg="lidar_grid" type="lidar_grid2" name="lidar_grid2" >
-    <param name="fixed_frame" value="$(arg fixed_frame)" />
-    <param name="R" value="$(arg R)" />
-    <param name="TH" value="$(arg TH)" />
-    <param name="grid_size_r" value="$(arg grid_size_r)" />
-    <param name="grid_size" value="$(arg grid_size)" />
-    <param name="threshold" value="$(arg threshold)" />
-    <param name="ground_z" value="$(arg ground_z)" />
-    <param name="max_gradient" value="$(arg max_gradient)" />
-    <param name="cut_width" value="$(arg cut_width)" />
-    <param name="y_width" value="$(arg y_width)" />
-    <param name="x_forward" value="$(arg x_forward)" />
-    <param name="x_backward" value="$(arg x_backward)" />
-  </node-->  
-
   <!--rviz可视化-->
   <node pkg="rviz" type="rviz" name="rviz" args="-d $(find lidar_grid)/rviz/lidar_grid.rviz" required="true"/>   
 

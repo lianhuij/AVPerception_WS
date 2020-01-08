@@ -30,9 +30,16 @@
   <arg name="ground_z" default="-1.8" />
   <!--最大坡度阈值-->
   <arg name="max_gradient" default="0.17" />
+  
+  <!--读单帧pcd文件>
+  <node pkg="lidar_grid" type="pcd_read" name="pcd_read" >
+    <param name="pcd_file" value="$(find record_data)/pcdfiles/road6_0515.pcd" />
+    <param name="fixed_frame" value="$(arg fixed_frame)" />
+    <param name="pub_hz" value="10" />
+  </node-->   
 
-  <!--连接VLP16-->
-  <include file="$(find velodyne_pointcloud)/launch/VLP16_points.launch" />
+  <!--读bag文件-->
+  <node pkg="rosbag" type="play" name="player" args="$(find record_data)/bagfiles/190716_05.bag" respawn="true" /> 
 
   <node pkg="lidar_grid" type="ego_car_node" name="ego_car" />
   
@@ -46,28 +53,31 @@
     <param name="threshold" value="$(arg threshold)" />
     <param name="cut_x" value="$(arg cut_x)" />
     <param name="cut_y" value="$(arg cut_y)" />
+    <param name="y_width" value="$(arg y_width)" />
+    <param name="x_forward" value="$(arg x_forward)" />
     <param name="RANSAC_threshold" value="$(arg RANSAC_threshold)" />
   </node>
-  
-  <!--处理点云输出可通行栅格，RANSAC方法-->
-  <node pkg="lidar_grid" type="lidar_grid" name="lidar_grid" >
+
+  <!--处理点云输出可通行栅格，梯度方法-->
+  <node pkg="lidar_grid" type="lidar_grid2" name="lidar_grid2" >
     <param name="fixed_frame" value="$(arg fixed_frame)" />
     <param name="R" value="$(arg R)" />
     <param name="TH" value="$(arg TH)" />
     <param name="grid_size_r" value="$(arg grid_size_r)" />
     <param name="grid_size" value="$(arg grid_size)" />
     <param name="threshold" value="$(arg threshold)" />
+    <param name="ground_z" value="$(arg ground_z)" />
+    <param name="max_gradient" value="$(arg max_gradient)" />
     <param name="cut_width" value="$(arg cut_width)" />
     <param name="y_width" value="$(arg y_width)" />
     <param name="x_forward" value="$(arg x_forward)" />
     <param name="x_backward" value="$(arg x_backward)" />
-    <param name="RANSAC_threshold" value="$(arg RANSAC_threshold)" />
-  </node>
+  </node>  
 
   <!--rviz可视化-->
-  <node pkg="rviz" type="rviz" name="rviz" args="-d $(find lidar_grid)/rviz/lidar_grid.rviz" required="true"/>     
+  <node pkg="rviz" type="rviz" name="rviz" args="-d $(find lidar_grid)/rviz/lidar_grid.rviz" required="true"/>   
 
-  <!--rqt_plot显示曲线-->
-  <node pkg="rqt_plot" type="rqt_plot" name="plot" />
+  <!--rqt_plot查看程序耗时-->
+  <node pkg="rqt_plot" type="rqt_plot" name="rqt_plot" />
 
 </launch>
