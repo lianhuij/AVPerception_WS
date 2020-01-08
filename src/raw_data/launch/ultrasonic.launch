@@ -1,0 +1,20 @@
+<launch>
+
+  <!--超声波雷达模式-->
+  <!--0xb1， 2.0m外， 盲区290mm-->
+  <!--0xb3， 2.0m内， 盲区250mm-->
+  <!--0xb5， 1.5m内， 盲区205mm-->
+  <!--0xb7， 1.0m内， 盲区200mm-->
+  <arg name="ultrasonic_mode" default="0xb5" />
+
+  <!--接收MPC单片机CAN消息-->
+  <node pkg="socketcan_bridge" type="socketcan_bridge_node" name="socketcan_bridge_node" />
+  <node pkg="raw_data" type="ultrasonic_activate_node" name="ultrasonic_activate_node" >
+    <param name="ultrasonic_mode" value="$(arg ultrasonic_mode)" />
+  </node>
+
+  <!--rqt_plot-->
+  <node pkg="rqt_plot" type="rqt_plot" name="rqt_plot1" />
+  <node pkg="rqt_plot" type="rqt_plot" name="rqt_plot2" />
+
+</launch>

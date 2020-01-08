@@ -5,7 +5,6 @@
 #include <can_msgs/Frame.h>
 #include <raw_data/RadarRaw.h>
 #include <raw_data/RadarRawArray.h>
-#include <raw_data/Ultrasonic.h>
 #include <vector>
 
 ///////////////////////MPC单片机CAN消息处理类////////////////////////
@@ -18,8 +17,6 @@ protected:
     ros::Publisher right_radar_rawArray_pub;
     ros::Publisher left_radar_raw_pub;
     ros::Publisher left_radar_rawArray_pub;
-    ros::Publisher left_ultrasonic_pub;
-    ros::Publisher right_ultrasonic_pub;
     ros::Time right_radar_stamp;
     ros::Time left_radar_stamp;
     std::string fixed_frame;

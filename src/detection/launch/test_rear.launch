@@ -2,7 +2,7 @@
 
   <!--rviz中的fixed frame-->
   <arg name="fixed_frame" default="rear" />
-  <!--radar x方向偏移量-->
+  <!--radar y方向偏移量-->
   <arg name="y_offset" default="0.20" />
 
   <!--读bag文件-->
@@ -24,7 +24,6 @@
   <node pkg="rviz" type="rviz" name="rviz" args="-d $(find detection)/rviz/rear_detection.rviz" required="true"/>   
 
   <!--rqt_plot-->
-  <node pkg="rqt_plot" type="rqt_plot" name="rqt_plot1" />
-  <node pkg="rqt_plot" type="rqt_plot" name="rqt_plot2" />
+  <node pkg="rqt_plot" type="rqt_plot" name="rqt_plot" />
 
 </launch>

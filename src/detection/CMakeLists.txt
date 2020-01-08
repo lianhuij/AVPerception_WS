@@ -230,10 +230,19 @@ add_executable(rear_tracker_node
   src/rear_tracker_node.cpp
   src/rear_radar_tracker.cpp
   src/radar_cmkf_tracker.cpp
-  src/ultrasonic_filter.cpp
 
 )
 add_dependencies(rear_tracker_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 target_link_libraries(rear_tracker_node
+  ${catkin_LIBRARIES}
+)
+
+add_executable(ultrasonic_node
+  src/ultrasonic_node.cpp
+  src/ultrasonic_filter.cpp
+
+)
+add_dependencies(ultrasonic_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+target_link_libraries(ultrasonic_node
   ${catkin_LIBRARIES}
 )
