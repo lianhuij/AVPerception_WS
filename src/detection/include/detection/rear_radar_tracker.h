@@ -9,15 +9,6 @@
 #include "detection/dbscan.h"
 #include "detection/GNN.h"
 
-const int RADAR_MIN_CONFIDENCE   = 10;
-const int RADAR_MAX_CONFIDENCE   = 60;
-const float RADAR_CLUSTER_EPS    = 0.85;
-const float RADAR_CLUSTER_MINPTS = 0;
-const float RADAR_NEWOBJ_WEIGHT  = 0.1;
-const float R_GATE     = 1.0;   // r 1.0m, theta 5deg, vt 1.0m/s
-const float THETA_GATE = 0.08;
-const float VT_GATE    = 1.0;
-
 class RearRadarTracker
 {
 public:

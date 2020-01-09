@@ -9,6 +9,14 @@ extern RearRadarTracker* left_radar_tracker_ptr;
 extern RearRadarTracker* right_radar_tracker_ptr;
 extern std::string FIXED_FRAME;
 extern float Y_OFFSET;
+extern int RADAR_MIN_CONFIDENCE;
+extern int RADAR_MAX_CONFIDENCE;
+extern float RADAR_CLUSTER_EPS;
+extern float RADAR_CLUSTER_MINPTS;
+extern float RADAR_NEWOBJ_WEIGHT;
+extern float R_GATE;
+extern float THETA_GATE;
+extern float VT_GATE;
 
 RearRadarTracker::RearRadarTracker(void)
 {
@@ -163,8 +171,10 @@ void RearRadarTracker::MatchGNN(std::vector<RadarObject> &src)
                 H(2,3) = ry / r_2;
                 matrix3d S = H * P[j] * H.transpose() + R;
                 w_ij(i, j) = normalDistributionDensity< 3 >(S, z_, z);
+                // std::cout<<"w_ij(i, j) = "<< w_ij(i, j) <<std::endl;
             }else{
                 w_ij(i, j) = 0;
+                // std::cout<<fabs(r - r_2)<<" "<< fabs(theta - theta_) <<" "<<fabs(vt - vt_) <<std::endl;
             }
         }
     }
@@ -212,6 +222,7 @@ void RearRadarTracker::MatchGNN(std::vector<RadarObject> &src)
 
             if(track_info[i].confidence < 0 || !IsConverged(i))    // remove lost target
             {
+                // std::cout<<"confidence = "<<track_info[i].confidence<<" "<<X[i](0) <<" "<<X[i](1)<< std::endl;
                 RemoveTrack(i);
             }
         }
@@ -308,6 +319,8 @@ bool RearRadarTracker::IsConverged(int track_index)
         && vx_cov < 25 && vy_cov < 25 && ax_cov < 25 && ay_cov < 25)
     {
         converged = true;
+    }else{
+        // std::cout<<"not converged "<<vx_cov<<" "<<vy_cov<<" "<<ax_cov<<" "<<ay_cov<<std::endl;
     }
     return converged;
 }
@@ -341,8 +354,8 @@ void RearRadarTracker::PubRadarTracks(void)
     int track_num = X.size();
     for (int i=0; i<track_num; ++i)
     {
-        if(track_info[i].confidence < RADAR_MIN_CONFIDENCE) continue;
-        if (!IsConverged(i))  continue;
+        // if(track_info[i].confidence < RADAR_MIN_CONFIDENCE) continue;
+        // if (!IsConverged(i))  continue;
 
         bbox_marker.id = marker_id;
         bbox_marker.pose.position.x = X[i](0);
@@ -412,8 +425,8 @@ void RearRadarTracker::GetRadarTrack(std::vector<LocalTrack>& tracks){
     LocalTrack track;
     int size = X.size();
     for(int i=0; i<size; ++i){
-        if(track_info[i].confidence < RADAR_MIN_CONFIDENCE) continue;
-        if (!IsConverged(i))  continue;
+        // if(track_info[i].confidence < RADAR_MIN_CONFIDENCE) continue;
+        // if (!IsConverged(i))  continue;
         track.X  = X[i];
         track.P  = P[i];
         tracks.push_back(track);
