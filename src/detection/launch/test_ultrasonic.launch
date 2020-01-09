@@ -8,7 +8,7 @@
   <arg name="ultrasonic_mode" default="0xb5" />
 
   <!--读bag文件-->
-  <node pkg="rosbag" type="play" name="player" args="$(find record_data)/bagfiles/200107_u1.bag" respawn="true" /> 
+  <node pkg="rosbag" type="play" name="player" args="$(find record_data)/bagfiles/200107_u2.bag" respawn="true" /> 
 
   <!--接收MPC单片机CAN消息-->
   <node pkg="raw_data" type="ultrasonic_activate_node" name="ultrasonic_activate_node" >

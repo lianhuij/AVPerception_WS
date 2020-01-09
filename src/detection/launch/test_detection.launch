@@ -38,7 +38,7 @@
   <arg name="ROI_length" default="22.0" />
 
   <!--读bag文件-->
-  <node pkg="rosbag" type="play" name="player" args="$(find record_data)/bagfiles/191220_f3.bag" respawn="true" />   
+  <node pkg="rosbag" type="play" name="player" args="$(find record_data)/bagfiles/191220_f1.bag" respawn="true" />   
 
   <node pkg="lidar_grid" type="ego_car_node" name="ego_car" /> 
 
