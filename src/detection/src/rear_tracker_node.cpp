@@ -18,9 +18,7 @@ float THETA_GATE;
 float VT_GATE;
 
 RearRadarTracker left_radar_tracker;
-RearRadarTracker* left_radar_tracker_ptr = &left_radar_tracker;
 RearRadarTracker right_radar_tracker;
-RearRadarTracker* right_radar_tracker_ptr = &right_radar_tracker;
 
 int main(int argc,char** argv)
 {
@@ -37,8 +35,8 @@ int main(int argc,char** argv)
     nh.param<float>("/rear_tracker_node/THETA_GATE", THETA_GATE, 0.08);
     nh.param<float>("/rear_tracker_node/VT_GATE", VT_GATE, 1.0);
 
-    left_radar_sub  = nh.subscribe("left_radar_rawArray", 10, &RearRadarTracker::CMKF, left_radar_tracker_ptr);
-    right_radar_sub = nh.subscribe("right_radar_rawArray", 10, &RearRadarTracker::CMKF, right_radar_tracker_ptr);
+    left_radar_sub  = nh.subscribe("left_radar_rawArray", 10, &RearRadarTracker::CMKF, &left_radar_tracker);
+    right_radar_sub = nh.subscribe("right_radar_rawArray", 10, &RearRadarTracker::CMKF, &right_radar_tracker);
 
     left_radar_rviz_pub = nh.advertise<visualization_msgs::MarkerArray>("left_radar_rviz", 10);
     right_radar_rviz_pub  = nh.advertise<visualization_msgs::MarkerArray>("right_radar_rviz", 10);

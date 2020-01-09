@@ -6,12 +6,6 @@
 #include "detection/object.h"
 #include "detection/GNN.h"
 
-const int CAM_MIN_CONFIDENCE   = 7;
-const int CAM_MAX_CONFIDENCE   = 30;
-const float CAM_NEWOBJ_WEIGHT  = 0.01;
-const float CAM_RX_GATE  = 2.0;   // rx 2.0m, ry 1.0m
-const float CAM_RY_GATE  = 1.0;
-
 class CameraTracker
 {
 public:

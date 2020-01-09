@@ -10,6 +10,13 @@
 extern ros::Publisher fusion_od_pub, fusion_pub;
 extern std::string FIXED_FRAME;
 extern float X_OFFSET;
+extern int FUSION_MIN_CONFIDENCE;
+extern int FUSION_MAX_CONFIDENCE;
+extern float LOCAL_SINGLE_WEIGHT;
+extern float FUSION_NEWOBJ_WEIGHT;
+extern float CAMERA_TRACK_GATE;
+extern float RX_TRACK_GATE;
+extern float RY_TRACK_GATE;
 // extern RadarTracker radar_tracker;
 extern RadarCMKFTracker radar_tracker;
 extern CameraTracker camera_tracker;

@@ -6,6 +6,14 @@
 extern ros::Publisher radar_ekf_pub, radar_pub;
 extern std::string FIXED_FRAME;
 extern float X_OFFSET;
+extern int RADAR_MIN_CONFIDENCE;
+extern int RADAR_MAX_CONFIDENCE;
+extern float RADAR_CLUSTER_EPS;
+extern float RADAR_CLUSTER_MINPTS;
+extern float RADAR_NEWOBJ_WEIGHT;
+extern float R_GATE;
+extern float THETA_GATE;
+extern float VT_GATE;
 
 RadarTracker::RadarTracker(void)
 {

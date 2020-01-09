@@ -5,8 +5,8 @@
 
 extern ros::Publisher left_radar_rviz_pub, right_radar_rviz_pub,
                       left_radar_pub, right_radar_pub;
-extern RearRadarTracker* left_radar_tracker_ptr;
-extern RearRadarTracker* right_radar_tracker_ptr;
+extern RearRadarTracker left_radar_tracker;
+extern RearRadarTracker right_radar_tracker;
 extern std::string FIXED_FRAME;
 extern float Y_OFFSET;
 extern int RADAR_MIN_CONFIDENCE;
@@ -331,12 +331,12 @@ void RearRadarTracker::PubRadarTracks(void)
     visualization_msgs::Marker bbox_marker;
     bbox_marker.header.frame_id = FIXED_FRAME;
     bbox_marker.header.stamp = time_stamp;
-    if(this == left_radar_tracker_ptr){
+    if(this == &left_radar_tracker){
       bbox_marker.color.r = 0.0f;
       bbox_marker.color.g = 0.0f;
       bbox_marker.color.b = 1.0f;    //left radar color red
     }
-    if(this == right_radar_tracker_ptr){
+    if(this == &right_radar_tracker){
       bbox_marker.color.r = 1.0f;    //right radar color red
       bbox_marker.color.g = 0.0f;
       bbox_marker.color.b = 0.0f;
@@ -359,10 +359,10 @@ void RearRadarTracker::PubRadarTracks(void)
 
         bbox_marker.id = marker_id;
         bbox_marker.pose.position.x = X[i](0);
-        if(this == left_radar_tracker_ptr){
+        if(this == &left_radar_tracker){
           bbox_marker.pose.position.y = X[i](1) + Y_OFFSET;
         }
-        if(this == right_radar_tracker_ptr){
+        if(this == &right_radar_tracker){
           bbox_marker.pose.position.y = X[i](1) - Y_OFFSET;
         }
         bbox_marker.pose.position.z = 0;
@@ -371,10 +371,10 @@ void RearRadarTracker::PubRadarTracks(void)
         bbox_marker.scale.z = PED_HEIGHT;
         marker_array.markers.push_back(bbox_marker);
         target.rx = X[i](0);
-        if(this == left_radar_tracker_ptr){
+        if(this == &left_radar_tracker){
           target.ry = X[i](1) + Y_OFFSET;
         }
-        if(this == right_radar_tracker_ptr){
+        if(this == &right_radar_tracker){
           target.ry = X[i](1) - Y_OFFSET;
         }
         target.vx = X[i](2);
@@ -406,11 +406,11 @@ void RearRadarTracker::PubRadarTracks(void)
         marker_array.markers.push_back(bbox_marker);
     }
     pre_marker_size_ = marker_id;
-    if(this == left_radar_tracker_ptr){
+    if(this == &left_radar_tracker){
       left_radar_rviz_pub.publish(marker_array);
       left_radar_pub.publish(target_array);
     }
-    if(this == right_radar_tracker_ptr){
+    if(this == &right_radar_tracker){
       right_radar_rviz_pub.publish(marker_array);
       right_radar_pub.publish(target_array);
     }

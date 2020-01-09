@@ -6,6 +6,11 @@
 
 extern ros::Publisher lidar_kf_pub, lidar_pub;
 extern std::string FIXED_FRAME;
+extern int LIDAR_MIN_CONFIDENCE;
+extern int LIDAR_MAX_CONFIDENCE;
+extern float LIDAR_NEWOBJ_WEIGHT;
+extern float LIDAR_RX_GATE;
+extern float LIDAR_RY_GATE;
 extern SensorFusion fusion_tracker;
 
 LidarTracker::LidarTracker(void)

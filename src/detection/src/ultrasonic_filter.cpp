@@ -3,8 +3,8 @@
 #include <detection/ultrasonic_filter.h>
 
 extern ros::Publisher left_ultrasonic_pub, right_ultrasonic_pub;
-extern UltrasonicFilter* left_ultrasonic_ptr;
-extern UltrasonicFilter* right_ultrasonic_ptr;
+extern UltrasonicFilter left_ultrasonic;
+extern UltrasonicFilter right_ultrasonic;
 
 UltrasonicFilter::UltrasonicFilter(void)
 {
@@ -73,11 +73,11 @@ void UltrasonicFilter::PubUltrasonic(void)
       }
     }
     probe.header.stamp = time_stamp;
-    if(this == left_ultrasonic_ptr){
+    if(this == &left_ultrasonic){
       left_ultrasonic_pub.publish(probe);
       return;
     }
-    if(this == right_ultrasonic_ptr){
+    if(this == &right_ultrasonic){
       right_ultrasonic_pub.publish(probe);
       return;
     }

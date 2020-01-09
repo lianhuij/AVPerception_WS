@@ -5,6 +5,11 @@
 
 extern ros::Publisher camera_kf_pub;
 extern std::string FIXED_FRAME;
+extern int CAM_MIN_CONFIDENCE;
+extern int CAM_MAX_CONFIDENCE;
+extern float CAM_NEWOBJ_WEIGHT;
+extern float CAM_RX_GATE;
+extern float CAM_RY_GATE;
 
 CameraTracker::CameraTracker(void)
 {
