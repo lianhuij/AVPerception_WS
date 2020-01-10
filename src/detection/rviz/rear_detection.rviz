@@ -9,6 +9,7 @@ Panels:
         - /MarkerArray2
         - /MarkerArray3
         - /MarkerArray4
+        - /MarkerArray5
       Splitter Ratio: 0.5
     Tree Height: 708
   - Class: rviz/Selection
@@ -61,21 +62,21 @@ Visualization Manager:
       Reference Frame: <Fixed Frame>
       Value: true
     - Class: rviz/MarkerArray
-      Enabled: true
+      Enabled: false
       Marker Topic: /left_radar_rviz
       Name: MarkerArray
       Namespaces:
-        "": true
+        {}
       Queue Size: 100
-      Value: true
+      Value: false
     - Class: rviz/MarkerArray
-      Enabled: true
+      Enabled: false
       Marker Topic: /right_radar_rviz
       Name: MarkerArray
       Namespaces:
-        "": true
+        {}
       Queue Size: 100
-      Value: true
+      Value: false
     - Class: rviz/MarkerArray
       Enabled: false
       Marker Topic: /left_radar_raw_rviz
@@ -92,6 +93,14 @@ Visualization Manager:
         {}
       Queue Size: 100
       Value: false
+    - Class: rviz/MarkerArray
+      Enabled: true
+      Marker Topic: /radar_fusion_rviz
+      Name: MarkerArray
+      Namespaces:
+        "": true
+      Queue Size: 100
+      Value: true
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
@@ -124,18 +133,18 @@ Visualization Manager:
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 8.16645527
-        Y: -0.373298556
-        Z: -3.73065972
+        X: 9.07923794
+        Y: -0.80237031
+        Z: -3.48875046
       Focal Shape Fixed Size: false
       Focal Shape Size: 0.0500000007
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.00999999978
-      Pitch: 1.14979672
+      Pitch: 0.749797106
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 1.63464653
+      Yaw: 1.5496484
     Saved:
       - Class: rviz/Orbit
         Distance: 16.5528126

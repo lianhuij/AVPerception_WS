@@ -20,9 +20,17 @@
   <arg name="THETA_GATE" default="0.08" />
   <!--radar 速度跟踪门-->
   <arg name="VT_GATE" default="1.0" />
+  <!--半车道宽度-->
+  <arg name="HALF_LANE_WIDTH" default="1.5" />
+  <!--融合RX门限-->
+  <arg name="RX_GATE" default="1.0" />
+  <!--融合RY门限-->
+  <arg name="RY_GATE" default="0.8" />
+  <!--fusion lost cnt-->
+  <arg name="MAX_LOST_CNT" default="0" />
 
   <!--读bag文件-->
-  <node pkg="rosbag" type="play" name="player" args="$(find record_data)/bagfiles/200107_r6.bag" respawn="true" />    
+  <node pkg="rosbag" type="play" name="player" args="$(find record_data)/bagfiles/200107_r7.bag" respawn="true" />    
 
   <!--接收MPC单片机CAN消息-->
   <node pkg="raw_data" type="rear_raw_node" name="rear_raw_node" output="screen">
@@ -42,12 +50,16 @@
     <param name="R_GATE" value="$(arg R_GATE)" />
     <param name="THETA_GATE" value="$(arg THETA_GATE)" />
     <param name="VT_GATE" value="$(arg VT_GATE)" />
+    <param name="HALF_LANE_WIDTH" value="$(arg HALF_LANE_WIDTH)" />
+    <param name="RX_GATE" value="$(arg RX_GATE)" />
+    <param name="RY_GATE" value="$(arg RY_GATE)" />
+    <param name="MAX_LOST_CNT" value="$(arg MAX_LOST_CNT)" />
   </node>
 
   <!--rviz可视化-->
   <node pkg="rviz" type="rviz" name="rviz" args="-d $(find detection)/rviz/rear_detection.rviz" required="true"/>   
 
-  <!--rqt_plot>
-  <node pkg="rqt_plot" type="rqt_plot" name="rqt_plot" /-->
+  <!--rqt_plot-->
+  <node pkg="rqt_plot" type="rqt_plot" name="rqt_plot" />
 
 </launch>

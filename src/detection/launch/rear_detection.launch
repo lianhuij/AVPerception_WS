@@ -20,6 +20,12 @@
   <arg name="THETA_GATE" default="0.08" />
   <!--radar 速度跟踪门-->
   <arg name="VT_GATE" default="1.0" />
+  <!--半车道宽度-->
+  <arg name="HALF_LANE_WIDTH" default="1.5" />
+  <!--融合RX门限-->
+  <arg name="RX_GATE" default="1.0" />
+  <!--融合RY门限-->
+  <arg name="RY_GATE" default="0.8" />
 
   <!--接收MPC单片机CAN消息-->
   <node pkg="socketcan_bridge" type="socketcan_bridge_node" name="socketcan_bridge_node" />
@@ -40,6 +46,9 @@
     <param name="R_GATE" value="$(arg R_GATE)" />
     <param name="THETA_GATE" value="$(arg THETA_GATE)" />
     <param name="VT_GATE" value="$(arg VT_GATE)" />
+    <param name="HALF_LANE_WIDTH" value="$(arg HALF_LANE_WIDTH)" />
+    <param name="RX_GATE" value="$(arg RX_GATE)" />
+    <param name="RY_GATE" value="$(arg RY_GATE)" />
   </node>
 
   <!--rviz可视化-->

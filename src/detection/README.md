@@ -34,6 +34,7 @@ receive topic :
 publish topic :  
 - left_radar_rviz
 - right_radar_rviz
+- radar_fusion_rviz
 - left_radar_array
 - right_radar_array 
 - radar_fusion_array

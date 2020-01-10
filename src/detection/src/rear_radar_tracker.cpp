@@ -2,11 +2,13 @@
 #include <visualization_msgs/Marker.h>
 #include <visualization_msgs/MarkerArray.h>
 #include "detection/rear_radar_tracker.h"
+#include "detection/rear_radar_fusion.h"
 
 extern ros::Publisher left_radar_rviz_pub, right_radar_rviz_pub,
                       left_radar_pub, right_radar_pub;
 extern RearRadarTracker left_radar_tracker;
 extern RearRadarTracker right_radar_tracker;
+extern RearRadarFusion  radar_fusion_tracker;
 extern std::string FIXED_FRAME;
 extern float Y_OFFSET;
 extern int RADAR_MIN_CONFIDENCE;
@@ -97,6 +99,9 @@ void RearRadarTracker::CMKF(const raw_data::RadarRawArray& input)
     // float duration_ms = (float)(end-start)*1000/(float)CLOCKS_PER_SEC;  //程序用时 ms
     // std::cout << "duration(ms) = " << duration_ms << std::endl;
     PubRadarTracks();
+    if(this == &left_radar_tracker){
+        radar_fusion_tracker.Run();     //fusion at left radar time
+    }
 }
 
 void RearRadarTracker::InitTrack(const RadarObject &obj)
