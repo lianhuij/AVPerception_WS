@@ -40,7 +40,7 @@ protected:
     float grid_size_th;       //角度上的分辨率
     float radius;             //半径
     float grid_size;          //输出栅格大小
-    double threshold;         //地面点阈值
+    float threshold;         //地面点阈值
     float cut_width;          //可通行域裁剪宽度
     int y_width;              //输出栅格地图一侧宽度
     int x_forward;            //输出栅格地图前向长度
@@ -55,17 +55,17 @@ public:
         time_pub = nh.advertise<std_msgs::Float32>("time", 1);                           //发布话题：time
         ground_z_pub = nh.advertise<std_msgs::Float32>("ground_z", 1);                   //发布话题：ground_z
 
-        nh.getParam("/lidar_grid/fixed_frame", fixed_frame);
-        nh.getParam("/lidar_grid/R", R);
-        nh.getParam("/lidar_grid/TH", TH);
-        nh.getParam("/lidar_grid/grid_size_r", grid_size_r);
-        nh.getParam("/lidar_grid/grid_size", grid_size);
-        nh.getParam("/lidar_grid/threshold", threshold);
-        nh.getParam("/lidar_grid/cut_width", cut_width);
-        nh.getParam("/lidar_grid/y_width", y_width);
-        nh.getParam("/lidar_grid/x_forward", x_forward);
-        nh.getParam("/lidar_grid/x_backward", x_backward);
-        nh.getParam("/lidar_grid/RANSAC_threshold", RANSAC_threshold);
+        nh.param<std::string>("/lidar_grid/fixed_frame", fixed_frame, "velodyne");
+        nh.param<int>("/lidar_grid/R", R, 60);
+        nh.param<int>("/lidar_grid/TH", TH, 180);
+        nh.param<float>("/lidar_grid/grid_size_r", grid_size_r, 0.4);
+        nh.param<float>("/lidar_grid/grid_size", grid_size, 0.2);
+        nh.param<float>("/lidar_grid/threshold", threshold, 0.15);
+        nh.param<float>("/lidar_grid/cut_width", cut_width, 1.7);
+        nh.param<int>("/lidar_grid/y_width", y_width, 50);
+        nh.param<int>("/lidar_grid/x_forward", x_forward, 100);
+        nh.param<int>("/lidar_grid/x_backward", x_backward, 0);
+        nh.param<float>("/lidar_grid/RANSAC_threshold", RANSAC_threshold, 0.2);
         grid_size_th = 2*M_PI/TH;
         radius = R*grid_size_r;
     }
@@ -116,7 +116,7 @@ void LidarCloudHandler::rasterization(const sensor_msgs::PointCloud2ConstPtr& in
 
 /////////////////////////////////初步筛选出地面点云和障碍物点云/////////////////////////////
     pcl::PointXYZ minpoint, maxpoint;
-    double h = 0;
+    float h = 0;
     
     for (int i=0; i<R; ++i)      //遍历栅格地图grid
     {

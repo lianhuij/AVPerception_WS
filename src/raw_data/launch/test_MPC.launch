@@ -6,7 +6,7 @@
   <arg name="x_offset" default="1.6" />  
 
   <!--读bag文件-->
-  <node pkg="rosbag" type="play" name="player" args="$(find record_data)/bagfiles/191112_f9.bag" respawn="true" output="screen"/>    
+  <node pkg="rosbag" type="play" name="player" args="$(find record_data)/bagfiles/191112_f1.bag" respawn="true" output="screen"/>    
 
   <!--接收MPC单片机CAN消息-->
   <node pkg="raw_data" type="MPC_raw_node" name="MPC_raw_node" output="screen">

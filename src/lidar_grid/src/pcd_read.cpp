@@ -16,8 +16,8 @@ main(int argc, char **argv)
     std::string fixed_frame;
     int pub_hz;
     nh.getParam("/pcd_read/pcd_file", pcd_file);
-    nh.getParam("/pcd_read/fixed_frame", fixed_frame);
-    nh.getParam("/pcd_read/pub_hz", pub_hz);
+    nh.param<std::string>("/pcd_read/fixed_frame", fixed_frame, "velodyne");
+    nh.param<int>("/pcd_read/pub_hz", pub_hz, 10);
     pcl::io::loadPCDFile (pcd_file, cloud);   //从硬盘加载点云文件
     pcl::toROSMsg(cloud, output);
     output.header.frame_id = fixed_frame;

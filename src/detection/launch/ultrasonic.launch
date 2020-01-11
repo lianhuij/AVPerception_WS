@@ -16,6 +16,9 @@
   <!--超声波处理模块-->
   <node pkg="detection" type="ultrasonic_node" name="ultrasonic_node" output="screen" />
 
+  <!--连接VLP16, 运行可行域分割程序-->
+  <include file="$(find lidar_grid)/launch/lidar_grid.launch" />
+
   <!--rqt_plot-->
   <node pkg="rqt_plot" type="rqt_plot" name="rqt_plot1" />
   <node pkg="rqt_plot" type="rqt_plot" name="rqt_plot2" />

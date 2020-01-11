@@ -46,6 +46,8 @@
     <param name="threshold" value="$(arg threshold)" />
     <param name="cut_x" value="$(arg cut_x)" />
     <param name="cut_y" value="$(arg cut_y)" />
+    <param name="y_width" value="$(arg y_width)" />
+    <param name="x_forward" value="$(arg x_forward)" />
     <param name="RANSAC_threshold" value="$(arg RANSAC_threshold)" />
   </node>
 

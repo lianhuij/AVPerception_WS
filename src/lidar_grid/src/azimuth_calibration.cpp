@@ -23,9 +23,9 @@ public:
         pc_sub = nh.subscribe("velodyne_points", 1, &LidarCloudHandler::azi_calibration, this);   //接收话题：velodyne_points
         pc_pub = nh.advertise<sensor_msgs::PointCloud2>("azi_pc", 1);                             //发布话题：azi_pc
 
-        nh.getParam("/azimuth_calibration/fixed_frame", fixed_frame);
-        nh.getParam("/azimuth_calibration/cut_x", cut_x);
-        nh.getParam("/azimuth_calibration/cut_y", cut_y);
+        nh.param<std::string>("/azimuth_calibration/fixed_frame", fixed_frame, "velodyne");
+        nh.param<float>("/azimuth_calibration/cut_x", cut_x, 1.5);
+        nh.param<float>("/azimuth_calibration/cut_y", cut_y, 0.8);
     }
     ~LidarCloudHandler() { }
     void azi_calibration(const sensor_msgs::PointCloud2ConstPtr& input);

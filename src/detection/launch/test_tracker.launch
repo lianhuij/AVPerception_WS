@@ -12,9 +12,17 @@
   <arg name="ROI_width" default="5.5" />
   <!--lidar ROI length-->
   <arg name="ROI_length" default="22.0" />
+  <!--聚类半径-->
+  <arg name="CLUSTER_TOLERANCE" default="0.6" />
+  <!--最小聚类点数-->
+  <arg name="MIN_CLUSTER_SIZE" default="6" />
+  <!--最大聚类点数-->
+  <arg name="MAX_CLUSTER_SIZE" default="500" />
+  <!--目标最小宽度-->
+  <arg name="OBJECT_MIN_WIDTH" default="0.5" />
 
   <!--读bag文件-->
-  <node pkg="rosbag" type="play" name="player" args="$(find record_data)/bagfiles/191112_f6.bag" respawn="true" />    
+  <node pkg="rosbag" type="play" name="player" args="$(find record_data)/bagfiles/191112_f2.bag" respawn="true" />    
 
   <node pkg="lidar_grid" type="ego_car_node" name="ego_car" />
 
@@ -25,6 +33,10 @@
     <param name="ROI_length" value="$(arg ROI_length)" />
     <param name="cut_x" value="$(arg cut_x)" />
     <param name="cut_y" value="$(arg cut_y)" />
+    <param name="CLUSTER_TOLERANCE" value="$(arg CLUSTER_TOLERANCE)" />
+    <param name="MIN_CLUSTER_SIZE" value="$(arg MIN_CLUSTER_SIZE)" />
+    <param name="MAX_CLUSTER_SIZE" value="$(arg MAX_CLUSTER_SIZE)" />
+    <param name="OBJECT_MIN_WIDTH" value="$(arg OBJECT_MIN_WIDTH)" />
   </node>
 
   <!--接收MPC单片机CAN消息-->

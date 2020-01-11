@@ -22,7 +22,7 @@ void UltrasonicFilter::KF(const raw_data::Ultrasonic& input)
     for(int i=0; i<4; ++i){
       raw.probe[i] = input.probe[i];
     }
-    time_stamp = ros::Time::now();
+    time_stamp = input.header.stamp;
 
     if (X[0] < 0)
     {

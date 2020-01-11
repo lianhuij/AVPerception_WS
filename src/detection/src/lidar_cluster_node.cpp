@@ -17,11 +17,6 @@
 #include <detection/LidarRawArray.h>
 #include <detection/object.h>
 
-const float CLUSTER_TOLERANCE = 0.6;
-const int MIN_CLUSTER_SIZE    = 6;
-const int MAX_CLUSTER_SIZE    = 500;
-const float OBJECT_MIN_WIDTH  = 0.5;
-
 ////////////////////////激光雷达点云目标聚类处理类////////////////////////
 class LidarClusterHandler
 {
@@ -36,6 +31,10 @@ protected:
     float ROI_length;         //感兴趣区域长度
     float cut_x;              //裁剪近处自车点x范围
     float cut_y;              //裁剪近处自车点y范围
+    float CLUSTER_TOLERANCE;
+    int MIN_CLUSTER_SIZE;
+    int MAX_CLUSTER_SIZE;
+    float OBJECT_MIN_WIDTH;
 
 public:
     LidarClusterHandler()
@@ -45,11 +44,15 @@ public:
         lidar_rviz_pub = nh.advertise<visualization_msgs::MarkerArray>("lidar_raw_rviz", 10);
         lidar_rawArray_pub = nh.advertise<detection::LidarRawArray>("lidar_rawArray", 10);
 
-        nh.getParam("/lidar_cluster_node/fixed_frame", fixed_frame);
-        nh.getParam("/lidar_cluster_node/ROI_width", ROI_width);
-        nh.getParam("/lidar_cluster_node/ROI_length", ROI_length);
-        nh.getParam("/lidar_cluster_node/cut_x", cut_x);
-        nh.getParam("/lidar_cluster_node/cut_y", cut_y);
+        nh.param<std::string>("/lidar_cluster_node/fixed_frame", fixed_frame, "velodyne");
+        nh.param<float>("/lidar_cluster_node/ROI_width", ROI_width, 5.5);
+        nh.param<float>("/lidar_cluster_node/ROI_length", ROI_length, 22.0);
+        nh.param<float>("/lidar_cluster_node/cut_x", cut_x, 1.5);
+        nh.param<float>("/lidar_cluster_node/cut_y", cut_y, 0.8);
+        nh.param<float>("/lidar_cluster_node/CLUSTER_TOLERANCE", CLUSTER_TOLERANCE, 0.6);
+        nh.param<int>("/lidar_cluster_node/MIN_CLUSTER_SIZE", MIN_CLUSTER_SIZE, 6);
+        nh.param<int>("/lidar_cluster_node/MAX_CLUSTER_SIZE", MAX_CLUSTER_SIZE, 500);
+        nh.param<float>("/lidar_cluster_node/OBJECT_MIN_WIDTH", OBJECT_MIN_WIDTH, 0.5);
     }
     ~LidarClusterHandler(){ }
     void cluster(const sensor_msgs::PointCloud2ConstPtr& input);

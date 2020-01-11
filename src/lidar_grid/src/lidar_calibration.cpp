@@ -37,7 +37,7 @@ protected:
     float grid_size_r;        //半径上的分辨率
     float grid_size_th;       //角度上的分辨率
     float grid_size;          //输出栅格大小
-    double threshold;         //地面点阈值
+    float threshold;         //地面点阈值
     float cut_x;              //裁剪近处自车点x范围
     float cut_y;              //裁剪近处自车点y范围
     int y_width;              //输出栅格地图一侧宽度
@@ -51,17 +51,17 @@ public:
         pc_pub = nh.advertise<sensor_msgs::PointCloud2>("cali_pc", 1);                        //发布话题：cali_pc
         time_pub = nh.advertise<std_msgs::Float32>("cali_time", 1);                           //发布话题：cali_time
 
-        nh.getParam("/lidar_calibration/fixed_frame", fixed_frame);
-        nh.getParam("/lidar_calibration/R", R);
-        nh.getParam("/lidar_calibration/TH", TH);
-        nh.getParam("/lidar_calibration/grid_size_r", grid_size_r);
-        nh.getParam("/lidar_calibration/grid_size", grid_size);
-        nh.getParam("/lidar_calibration/threshold", threshold);
-        nh.getParam("/lidar_calibration/cut_x", cut_x);
-        nh.getParam("/lidar_calibration/cut_y", cut_y);
-        nh.getParam("/lidar_calibration/y_width", y_width);
-        nh.getParam("/lidar_calibration/x_forward", x_forward);
-        nh.getParam("/lidar_calibration/RANSAC_threshold", RANSAC_threshold);
+        nh.param<std::string>("/lidar_calibration/fixed_frame", fixed_frame, "velodyne");
+        nh.param<int>("/lidar_calibration/R", R, 60);
+        nh.param<int>("/lidar_calibration/TH", TH, 180);
+        nh.param<float>("/lidar_calibration/grid_size_r", grid_size_r, 0.4);
+        nh.param<float>("/lidar_calibration/grid_size", grid_size, 0.2);
+        nh.param<float>("/lidar_calibration/threshold", threshold, 0.15);
+        nh.param<float>("/lidar_calibration/cut_x", cut_x, 1.5);
+        nh.param<float>("/lidar_calibration/cut_y", cut_y, 0.8);
+        nh.param<int>("/lidar_calibration/y_width", y_width, 50);
+        nh.param<int>("/lidar_calibration/x_forward", x_forward, 100);
+        nh.param<float>("/lidar_calibration/RANSAC_threshold", RANSAC_threshold, 0.2);
         grid_size_th = 2*M_PI/TH;
     }
     ~LidarCloudHandler() { }
@@ -130,7 +130,7 @@ void LidarCloudHandler::calibration(const sensor_msgs::PointCloud2ConstPtr& inpu
 
 /////////////////////////////////初步筛选出地面点云和障碍物点云/////////////////////////////
     pcl::PointXYZ minpoint, maxpoint;
-    double h = 0;
+    float h = 0;
     
     for (int i=0; i<R; ++i)      //遍历栅格地图grid
     {

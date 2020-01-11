@@ -39,7 +39,7 @@
   </node-->   
 
   <!--读bag文件-->
-  <node pkg="rosbag" type="play" name="player" args="$(find record_data)/bagfiles/190726_l1.bag" respawn="true" /> 
+  <node pkg="rosbag" type="play" name="player" args="$(find record_data)/bagfiles/200107_l1.bag" respawn="true" /> 
 
   <node pkg="lidar_grid" type="ego_car_node" name="ego_car" />
   

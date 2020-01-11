@@ -16,8 +16,8 @@ MPCDataHandler::MPCDataHandler(void){
     cam_raw_pub = nh.advertise<visualization_msgs::MarkerArray>("camera_raw_rviz", 10);    //发布话题：camera_raw_rviz
     radar_rawArray_pub = nh.advertise<raw_data::RadarRawArray>("radar_rawArray", 10);      //发布话题：radar_rawArray
     cam_rawArray_pub = nh.advertise<raw_data::CameraRawArray>("camera_rawArray", 10);      //发布话题：camera_rawArray
-    nh.getParam("/MPC_raw_node/fixed_frame", fixed_frame);
-    nh.getParam("/MPC_raw_node/x_offset", x_offset);
+    nh.param<std::string>("/MPC_raw_node/fixed_frame", fixed_frame, "velodyne");
+    nh.param<float>("/MPC_raw_node/x_offset", x_offset, 1.6);
 }
 
 MPCDataHandler::~MPCDataHandler(){ }
