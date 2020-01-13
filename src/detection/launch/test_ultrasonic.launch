@@ -6,9 +6,17 @@
   <!--0xb5， 1.5m内， 盲区205mm-->
   <!--0xb7， 1.0m内， 盲区200mm-->
   <arg name="ultrasonic_mode" default="0xb5" />
+  <!--kalman param Q-->
+  <arg name="KF_Q" default="1" />
+  <!--kalman param R-->
+  <arg name="KF_R" default="1" />
+  <!--max range-->
+  <arg name="MAX_RANGE" default="5.0" />
+  <!--max lost-->
+  <arg name="MAX_LOST" default="7" />
 
   <!--读bag文件-->
-  <node pkg="rosbag" type="play" name="player" args="$(find record_data)/bagfiles/200107_u2.bag" respawn="true" /> 
+  <node pkg="rosbag" type="play" name="player" args="$(find record_data)/bagfiles/200112_u2.bag" respawn="true" /> 
 
   <!--接收MPC单片机CAN消息-->
   <node pkg="raw_data" type="ultrasonic_activate_node" name="ultrasonic_activate_node" >
@@ -16,7 +24,12 @@
   </node>
 
   <!--超声波处理模块-->
-  <node pkg="detection" type="ultrasonic_node" name="ultrasonic_node" output="screen" />
+  <node pkg="detection" type="ultrasonic_node" name="ultrasonic_node" output="screen" >
+    <param name="KF_Q" value="$(arg KF_Q)" />
+    <param name="KF_R" value="$(arg KF_R)" />
+    <param name="MAX_RANGE" value="$(arg MAX_RANGE)" />
+    <param name="MAX_LOST" value="$(arg MAX_LOST)" />
+  </node>
 
   <!--运行可行域分割程序-->
   <include file="$(find lidar_grid)/launch/drivable_area.launch" />
