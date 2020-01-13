@@ -27,9 +27,9 @@
   <!--输出栅格地图后向长度-->
   <arg name="x_backward" default="0" />
   <!--自车位置地面z坐标值-->
-  <arg name="ground_z" default="-1.8" />
+  <arg name="ground_z" default="-1.2" />
   <!--最大坡度阈值-->
-  <arg name="max_gradient" default="0.17" />
+  <arg name="max_gradient" default="0.1" />
   
   <node pkg="lidar_grid" type="ego_car_node" name="ego_car" />
   

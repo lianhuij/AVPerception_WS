@@ -13,6 +13,7 @@
 #include <cmath>
 #include <time.h>
 #include <vector>
+#include "raw_data/Ultrasonic.h"
 
 class Grid
 {
@@ -30,10 +31,14 @@ class LidarCloudHandler
 protected:
     ros::NodeHandle nh;
     ros::Subscriber pc_sub;
+    ros::Subscriber left_ultrasonic_sub;
+    ros::Subscriber right_ultrasonic_sub;
     ros::Publisher grid_pub;
     ros::Publisher time_pub;
     ros::Publisher ground_z_pub;
     std::string fixed_frame;
+    float left_ultrasonic[4];
+    float right_ultrasonic[4];
     int R;                    //半径上的分割数
     int TH;                   //角度上的分割数
     float grid_size_r;        //半径上的分辨率
@@ -51,6 +56,9 @@ public:
     LidarCloudHandler(void)
     {
         pc_sub = nh.subscribe("cali_pc", 1, &LidarCloudHandler::rasterization, this);    //接收话题：cali_pc
+        left_ultrasonic_sub  = nh.subscribe("left_ultrasonic", 10, &LidarCloudHandler::left_ultrasonic_cb, this);   //接收话题：left_ultrasonic
+        right_ultrasonic_sub = nh.subscribe("right_ultrasonic", 10, &LidarCloudHandler::right_ultrasonic_cb, this); //接收话题：right_ultrasonic
+
         grid_pub = nh.advertise<nav_msgs::GridCells>("grid_cell", 1);                    //发布话题：grid_cell
         time_pub = nh.advertise<std_msgs::Float32>("time", 1);                           //发布话题：time
         ground_z_pub = nh.advertise<std_msgs::Float32>("ground_z", 1);                   //发布话题：ground_z
@@ -71,7 +79,21 @@ public:
     }
     ~LidarCloudHandler() { }
     void rasterization(const sensor_msgs::PointCloud2ConstPtr& input);
+    void left_ultrasonic_cb(const raw_data::Ultrasonic& input);
+    void right_ultrasonic_cb(const raw_data::Ultrasonic& input);
 };
+
+void LidarCloudHandler::left_ultrasonic_cb(const raw_data::Ultrasonic& input){
+    for(int i=0; i<4; ++i){
+        left_ultrasonic[i] = input.probe[i];
+    }
+}
+
+void LidarCloudHandler::right_ultrasonic_cb(const raw_data::Ultrasonic& input){
+    for(int i=0; i<4; ++i){
+        right_ultrasonic[i] = input.probe[i];
+    }
+}
 
 //////////////////////////激光雷达点云栅格化及地面可通行区域提取函数///////////////////////////
 void LidarCloudHandler::rasterization(const sensor_msgs::PointCloud2ConstPtr& input)
@@ -180,11 +202,33 @@ void LidarCloudHandler::rasterization(const sensor_msgs::PointCloud2ConstPtr& in
         cloud_obstacle_ptr->push_back(cloud_temp2_ptr->points[m]);
     }
 
-    Grid obstacle[TH];  //建立一个TH个通道的障碍物列表
+    //在障碍物点云中加入超声波数据点
+    pcl::PointXYZ ultrasonic_point;
+    ultrasonic_point.z = 0;
+    for(int i=0; i<4; ++i){
+        switch (i)
+        {
+        case 0: ultrasonic_point.x = 0.9;   break;
+        case 1: ultrasonic_point.x = 0.65;  break;
+        case 2: ultrasonic_point.x = -0.3;  break;
+        case 3: ultrasonic_point.x = -1.05; break;
+        default: break;
+        }
+        if(left_ultrasonic[i] > 0 && left_ultrasonic[i] < 5.0){
+            ultrasonic_point.y = 0.75;
+            cloud_obstacle_ptr->push_back(ultrasonic_point);
+        }
+        if(right_ultrasonic[i] > 0 && right_ultrasonic[i] < 5.0){
+            ultrasonic_point.y = -0.75;
+            cloud_obstacle_ptr->push_back(ultrasonic_point);
+        }
+    }
+
+    //建立一个TH个通道的障碍物列表
+    Grid obstacle[TH];  
     int num = 0;
     float min = 0;
     int min_idx = 0;
-
     for (int m=0; m<cloud_obstacle_ptr->size(); ++m)   //遍历障碍物点云
     {
         if(x_backward == 0)
@@ -207,7 +251,6 @@ void LidarCloudHandler::rasterization(const sensor_msgs::PointCloud2ConstPtr& in
         t = (int)floor(th/grid_size_th) % TH;
         obstacle[t].grid_cloud_ptr->points.push_back(cloud_obstacle_ptr->points[m]);  //把障碍物点划分到对应的小扇形内（TH等分）
     }
-
 ////////////////////////////////////通过障碍物点云提取可通行区域边界////////////////////////////////
     for(int j=0; j<TH; ++j)  //遍历障碍物列表obstacle
     {
@@ -277,9 +320,9 @@ void LidarCloudHandler::rasterization(const sensor_msgs::PointCloud2ConstPtr& in
     {
         for(int j=0; j<TH; ++j)
         {
-            if(i < (int)(2/grid_size_r) || grid[i][j].IsDrivable==false)
+            if(i < (int)(1.6/grid_size_r) || grid[i][j].IsDrivable==false)
             {
-                continue;    //半径2m内不处理，非可行驶点不处理
+                continue;    //半径1.6m内不处理，非可行驶点不处理
             }
             if(grid[i][j].IsChecked)
             {

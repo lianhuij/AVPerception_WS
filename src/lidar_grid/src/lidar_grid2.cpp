@@ -7,6 +7,7 @@
 #include <pcl/common/common.h>
 #include <cmath>
 #include <time.h>
+#include "raw_data/Ultrasonic.h"
 
 enum RoadState {UNKNOWN, GROUND, OBSTACLE};
 
@@ -28,9 +29,13 @@ class LidarCloudHandler
 protected:
     ros::NodeHandle nh;
     ros::Subscriber pc_sub;
+    ros::Subscriber left_ultrasonic_sub;
+    ros::Subscriber right_ultrasonic_sub;
     ros::Publisher grid_pub;
     ros::Publisher time_pub;
     std::string fixed_frame;
+    float left_ultrasonic[4];
+    float right_ultrasonic[4];
     int R;                    //半径上的分割数
     int TH;                   //角度上的分割数
     float grid_size_r;        //半径上的分辨率
@@ -49,6 +54,9 @@ public:
     LidarCloudHandler(void)
     {
         pc_sub = nh.subscribe("cali_pc", 1, &LidarCloudHandler::rasterization, this);     //接收话题：cali_pc
+        left_ultrasonic_sub  = nh.subscribe("left_ultrasonic", 10, &LidarCloudHandler::left_ultrasonic_cb, this);   //接收话题：left_ultrasonic
+        right_ultrasonic_sub = nh.subscribe("right_ultrasonic", 10, &LidarCloudHandler::right_ultrasonic_cb, this); //接收话题：right_ultrasonic
+
         grid_pub = nh.advertise<nav_msgs::GridCells>("grid_cell", 1);                     //发布话题：grid_cell
         time_pub = nh.advertise<std_msgs::Float32>("time", 1);                            //发布话题：time
 
@@ -69,7 +77,21 @@ public:
     }
     ~LidarCloudHandler() { }
     void rasterization(const sensor_msgs::PointCloud2ConstPtr& input);
+    void left_ultrasonic_cb(const raw_data::Ultrasonic& input);
+    void right_ultrasonic_cb(const raw_data::Ultrasonic& input);
 };
+
+void LidarCloudHandler::left_ultrasonic_cb(const raw_data::Ultrasonic& input){
+    for(int i=0; i<4; ++i){
+        left_ultrasonic[i] = input.probe[i];
+    }
+}
+
+void LidarCloudHandler::right_ultrasonic_cb(const raw_data::Ultrasonic& input){
+    for(int i=0; i<4; ++i){
+        right_ultrasonic[i] = input.probe[i];
+    }
+}
 
 //////////////////////////激光雷达点云栅格化及地面可通行区域提取函数///////////////////////////
 void LidarCloudHandler::rasterization(const sensor_msgs::PointCloud2ConstPtr& input)
@@ -88,6 +110,27 @@ void LidarCloudHandler::rasterization(const sensor_msgs::PointCloud2ConstPtr& in
     float r = 0, th = 0;
     int a = 0, t = 0;
 
+    //在输入点云中加入超声波数据点
+    pcl::PointXYZ ultrasonic_point;
+    ultrasonic_point.z = 0;
+    for(int i=0; i<4; ++i){
+        switch (i)
+        {
+        case 0: ultrasonic_point.x = 0.9;   break;
+        case 1: ultrasonic_point.x = 0.65;  break;
+        case 2: ultrasonic_point.x = -0.3;  break;
+        case 3: ultrasonic_point.x = -1.05; break;
+        default: break;
+        }
+        if(left_ultrasonic[i] > 0 && left_ultrasonic[i] < 5.0){
+            ultrasonic_point.y = 0.75;
+            cloud_raw_ptr->push_back(ultrasonic_point);
+        }
+        if(right_ultrasonic[i] > 0 && right_ultrasonic[i] < 5.0){
+            ultrasonic_point.y = -0.75;
+            cloud_raw_ptr->push_back(ultrasonic_point);
+        }
+    }
 //////////////////////////////遍历输入点云，初步筛选，将点划入极坐标栅格内///////////////////////////////
     for (int m=0; m<cloud_raw_ptr->size(); ++m)   
     {
@@ -202,9 +245,9 @@ void LidarCloudHandler::rasterization(const sensor_msgs::PointCloud2ConstPtr& in
     {
         for(int j=0; j<TH; ++j)
         {
-            if(i < (int)(2/grid_size_r) || grid[i][j].IsDrivable==false)
+            if(i < (int)(1.6/grid_size_r) || grid[i][j].IsDrivable==false)
             {
-                continue;    //半径2m内不处理，非可行驶点不处理
+                continue;    //半径1.6m内不处理，非可行驶点不处理
             }
             if(grid[i][j].IsChecked)
             {
