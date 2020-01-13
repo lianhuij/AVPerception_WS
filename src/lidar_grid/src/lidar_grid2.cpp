@@ -123,11 +123,11 @@ void LidarCloudHandler::rasterization(const sensor_msgs::PointCloud2ConstPtr& in
         default: break;
         }
         if(left_ultrasonic[i] > 0 && left_ultrasonic[i] < 5.0){
-            ultrasonic_point.y = 0.75;
+            ultrasonic_point.y = 0.75 + left_ultrasonic[i];
             cloud_raw_ptr->push_back(ultrasonic_point);
         }
         if(right_ultrasonic[i] > 0 && right_ultrasonic[i] < 5.0){
-            ultrasonic_point.y = -0.75;
+            ultrasonic_point.y = -0.75 - right_ultrasonic[i];
             cloud_raw_ptr->push_back(ultrasonic_point);
         }
     }
