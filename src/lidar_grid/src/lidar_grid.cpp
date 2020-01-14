@@ -76,6 +76,10 @@ public:
         nh.param<float>("/lidar_grid/RANSAC_threshold", RANSAC_threshold, 0.2);
         grid_size_th = 2*M_PI/TH;
         radius = R*grid_size_r;
+        for(int i=0; i<4; ++i){
+            left_ultrasonic[i] = 5.0;
+            right_ultrasonic[i] = 5.0;
+        }
     }
     ~LidarCloudHandler() { }
     void rasterization(const sensor_msgs::PointCloud2ConstPtr& input);

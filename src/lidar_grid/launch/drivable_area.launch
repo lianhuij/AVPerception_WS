@@ -1,82 +1,21 @@
 <launch>
-
-  <!--rviz中的fixed frame-->
-  <arg name="fixed_frame" default="velodyne" />
-  <!--极坐标栅格地图半径上的分割数-->
-  <arg name="R" default="60" />
-  <!--极坐标栅格地图角度上的分割数-->
-  <arg name="TH" default="180" />
-  <!--极坐标栅格地图半径上的分辨率-->
-  <arg name="grid_size_r" default="0.4" />
-  <!--输出栅格大小-->
-  <arg name="grid_size" default="0.2" />
-  <!--地面点阈值-->
-  <arg name="threshold" default="0.15" />
-  <!--RANSAC 阈值-->
-  <arg name="RANSAC_threshold" default="0.2" />
-  <!--可通行域裁剪宽度-->
-  <arg name="cut_width" default="1.7" />
-  <!--裁剪近处自车点x范围-->
-  <arg name="cut_x" default="1.5" />
-  <!--裁剪近处自车点y范围-->
-  <arg name="cut_y" default="0.8" />
-  <!--输出栅格地图一侧宽度-->
-  <arg name="y_width" default="50" />
-  <!--输出栅格地图前向长度-->
-  <arg name="x_forward" default="100" />
-  <!--输出栅格地图后向长度-->
-  <arg name="x_backward" default="0" />
-  <!--自车位置地面z坐标值-->
-  <arg name="ground_z" default="-1.2" />
-  <!--最大坡度阈值-->
-  <arg name="max_gradient" default="0.1" />
   
+  <!--自车Marker-->
   <node pkg="lidar_grid" type="ego_car_node" name="ego_car" />
   
   <!--激光雷达地平面标定-->
   <node pkg="lidar_grid" type="lidar_calibration" name="lidar_calibration" >
-    <param name="fixed_frame" value="$(arg fixed_frame)" />
-    <param name="R" value="$(arg R)" />
-    <param name="TH" value="$(arg TH)" />
-    <param name="grid_size_r" value="$(arg grid_size_r)" />
-    <param name="grid_size" value="$(arg grid_size)" />
-    <param name="threshold" value="$(arg threshold)" />
-    <param name="cut_x" value="$(arg cut_x)" />
-    <param name="cut_y" value="$(arg cut_y)" />
-    <param name="y_width" value="$(arg y_width)" />
-    <param name="x_forward" value="$(arg x_forward)" />
-    <param name="RANSAC_threshold" value="$(arg RANSAC_threshold)" />
+    <rosparam command="load" file="$(find lidar_grid)/param/lidar_calibration.yaml" />
   </node>
 
   <!--处理点云输出可通行栅格，RANSAC方法-->
   <node pkg="lidar_grid" type="lidar_grid" name="lidar_grid" >
-    <param name="fixed_frame" value="$(arg fixed_frame)" />
-    <param name="R" value="$(arg R)" />
-    <param name="TH" value="$(arg TH)" />
-    <param name="grid_size_r" value="$(arg grid_size_r)" />
-    <param name="grid_size" value="$(arg grid_size)" />
-    <param name="threshold" value="$(arg threshold)" />
-    <param name="cut_width" value="$(arg cut_width)" />
-    <param name="y_width" value="$(arg y_width)" />
-    <param name="x_forward" value="$(arg x_forward)" />
-    <param name="x_backward" value="$(arg x_backward)" />
-    <param name="RANSAC_threshold" value="$(arg RANSAC_threshold)" />
+    <rosparam command="load" file="$(find lidar_grid)/param/pc_handler_ransac.yaml" />
   </node>
 
   <!--处理点云输出可通行栅格，梯度方法>
   <node pkg="lidar_grid" type="lidar_grid2" name="lidar_grid2" >
-    <param name="fixed_frame" value="$(arg fixed_frame)" />
-    <param name="R" value="$(arg R)" />
-    <param name="TH" value="$(arg TH)" />
-    <param name="grid_size_r" value="$(arg grid_size_r)" />
-    <param name="grid_size" value="$(arg grid_size)" />
-    <param name="threshold" value="$(arg threshold)" />
-    <param name="ground_z" value="$(arg ground_z)" />
-    <param name="max_gradient" value="$(arg max_gradient)" />
-    <param name="cut_width" value="$(arg cut_width)" />
-    <param name="y_width" value="$(arg y_width)" />
-    <param name="x_forward" value="$(arg x_forward)" />
-    <param name="x_backward" value="$(arg x_backward)" />
+    <rosparam command="load" file="$(find lidar_grid)/param/pc_handler_gradient.yaml" />
   </node-->  
 
   <!--rviz可视化-->

@@ -1,0 +1,31 @@
+fixed_frame: velodyne    # rviz中的fixed frame
+x_offset   : 1.6         # radar x方向偏移量
+
+LIDAR_MIN_CONFIDENCE: 7     # lidar 目标最小置信度
+LIDAR_MAX_CONFIDENCE: 100   # lidar 目标最大置信度
+LIDAR_NEWOBJ_WEIGHT : 0.01  # lidar 新目标权重
+LIDAR_RX_GATE       : 1.0   # lidar RX门限
+LIDAR_RY_GATE       : 1.0   # lidar RY门限
+
+RADAR_MIN_CONFIDENCE: 22    # radar 目标最小置信度
+RADAR_MAX_CONFIDENCE: 60    # radar 目标最大置信度
+RADAR_CLUSTER_EPS   : 0.85  # radar 聚类邻域半径
+RADAR_CLUSTER_MINPTS: 0     # radar 聚类邻域最小点数
+RADAR_NEWOBJ_WEIGHT : 0.1   # radar 新目标权重
+R_GATE              : 1.0   # radar 极径跟踪门
+THETA_GATE          : 0.08  # radar 极角跟踪门
+VT_GATE             : 1.0   # radar 速度跟踪门
+
+CAM_MIN_CONFIDENCE  : 7     # camera 目标最小置信度
+CAM_MAX_CONFIDENCE  : 30    # camera 目标最大置信度
+CAM_NEWOBJ_WEIGHT   : 0.01  # camera 新目标权重
+CAM_RX_GATE         : 2.0   # camera RX门限
+CAM_RY_GATE         : 1.0   # camera RY门限
+
+FUSION_MIN_CONFIDENCE: 7       # fusion 目标最小置信度
+FUSION_MAX_CONFIDENCE: 100     # fusion 目标最大置信度
+LOCAL_SINGLE_WEIGHT  : 0.001   # 局部航迹关联 单独航迹权重
+FUSION_NEWOBJ_WEIGHT : 0.00001 # fusion 新目标权重
+CAMERA_TRACK_GATE    : 2.5     # 关联camera x方向门限
+RX_TRACK_GATE        : 1.5     # fusion RX门限
+RY_TRACK_GATE        : 1.0     # fusion RY门限

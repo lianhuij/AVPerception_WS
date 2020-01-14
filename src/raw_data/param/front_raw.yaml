@@ -1,0 +1,2 @@
+fixed_frame: velodyne    # rviz中的fixed frame
+x_offset   : 1.60        # radar x方向偏移量

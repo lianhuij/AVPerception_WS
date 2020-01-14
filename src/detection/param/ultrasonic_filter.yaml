@@ -1,0 +1,4 @@
+KF_Q      : 1.0    # kalman filter param Q
+KF_R      : 1.0    # kalman filter param R
+MAX_RANGE : 5.0    # ultrasonic max range
+MAX_LOST  : 7      # max lost count

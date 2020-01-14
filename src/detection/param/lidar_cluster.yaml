@@ -1,0 +1,9 @@
+fixed_frame: velodyne    # rviz中的fixed frame
+ROI_width  : 5.5         # lidar ROI width
+ROI_length : 22.0        # lidar ROI length
+cut_x      : 1.5         # 裁剪近处自车点x范围
+cut_y      : 0.8         # 裁剪近处自车点y范围
+CLUSTER_TOLERANCE: 0.6   # 聚类半径
+MIN_CLUSTER_SIZE : 6     # 最小聚类点数
+MAX_CLUSTER_SIZE : 500   # 最大聚类点数
+OBJECT_MIN_WIDTH : 0.5   # 目标最小宽度

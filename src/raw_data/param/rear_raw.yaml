@@ -1,0 +1,2 @@
+fixed_frame: rear    # rviz中的fixed frame
+y_offset   : 0.20    # 两后雷达间距的一半

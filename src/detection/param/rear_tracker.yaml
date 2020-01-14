@@ -1,0 +1,15 @@
+fixed_frame: rear    # rviz中的fixed frame
+y_offset   : 0.20    # radar y方向偏移量
+
+RADAR_MIN_CONFIDENCE: 0    # radar 目标最小置信度
+RADAR_MAX_CONFIDENCE: 60   # radar 目标最大置信度
+RADAR_CLUSTER_EPS   : 0.85 # radar 聚类邻域半径
+RADAR_CLUSTER_MINPTS: 0    # radar 聚类邻域最小点数
+RADAR_NEWOBJ_WEIGHT : 0.1  # radar 新目标权重
+R_GATE              : 1.0  # radar 极径跟踪门
+THETA_GATE          : 0.08 # radar 极角跟踪门
+VT_GATE             : 1.0  # radar 速度跟踪门
+HALF_LANE_WIDTH     : 1.5  # 半车道宽度
+RX_GATE             : 1.0  # 融合RX门限
+RY_GATE             : 0.8  # 融合RY门限
+MAX_LOST_CNT        : 0    # fusion lost count

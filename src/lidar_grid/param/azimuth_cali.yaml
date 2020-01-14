@@ -1,0 +1,3 @@
+fixed_frame: velodyne    # rviz中的fixed frame
+cut_x      : 1.5         # 裁剪近处自车点x范围
+cut_y      : 0.8         # 裁剪近处自车点y范围

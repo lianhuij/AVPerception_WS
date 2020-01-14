@@ -1,59 +1,16 @@
 <launch>
 
-  <!--rviz中的fixed frame-->
-  <arg name="fixed_frame" default="rear" />
-  <!--radar y方向偏移量-->
-  <arg name="y_offset" default="0.20" />
-  <!--radar 最小置信度-->
-  <arg name="RADAR_MIN_CONFIDENCE" default="0" />
-  <!--radar 最大置信度-->
-  <arg name="RADAR_MAX_CONFIDENCE" default="60" />
-  <!--radar 聚类领域半径-->
-  <arg name="RADAR_CLUSTER_EPS" default="0.85" />
-  <!--radar 聚类领域最小点数-->
-  <arg name="RADAR_CLUSTER_MINPTS" default="0" />
-  <!--radar 新目标权重-->
-  <arg name="RADAR_NEWOBJ_WEIGHT" default="0.1" />
-  <!--radar 极径跟踪门-->
-  <arg name="R_GATE" default="1.0" />
-  <!--radar 极角跟踪门-->
-  <arg name="THETA_GATE" default="0.08" />
-  <!--radar 速度跟踪门-->
-  <arg name="VT_GATE" default="1.0" />
-  <!--半车道宽度-->
-  <arg name="HALF_LANE_WIDTH" default="1.5" />
-  <!--融合RX门限-->
-  <arg name="RX_GATE" default="1.0" />
-  <!--融合RY门限-->
-  <arg name="RY_GATE" default="0.8" />
-  <!--fusion lost cnt-->
-  <arg name="MAX_LOST_CNT" default="0" />
-
   <!--读bag文件-->
   <node pkg="rosbag" type="play" name="player" args="$(find record_data)/bagfiles/200107_r7.bag" respawn="true" />    
 
   <!--接收MPC单片机CAN消息-->
   <node pkg="raw_data" type="rear_raw_node" name="rear_raw_node" output="screen">
-    <param name="fixed_frame" value="$(arg fixed_frame)" />
-    <param name="y_offset" value="$(arg y_offset)" />
+    <rosparam command="load" file="$(find raw_data)/param/rear_raw.yaml" />
   </node>
 
   <!--目标跟踪模块-->
   <node pkg="detection" type="rear_tracker_node" name="rear_tracker_node" output="screen">
-    <param name="fixed_frame" value="$(arg fixed_frame)" />
-    <param name="y_offset" value="$(arg y_offset)" />
-    <param name="RADAR_MIN_CONFIDENCE" value="$(arg RADAR_MIN_CONFIDENCE)" />
-    <param name="RADAR_MAX_CONFIDENCE" value="$(arg RADAR_MAX_CONFIDENCE)" />
-    <param name="RADAR_CLUSTER_EPS" value="$(arg RADAR_CLUSTER_EPS)" />
-    <param name="RADAR_CLUSTER_MINPTS" value="$(arg RADAR_CLUSTER_MINPTS)" />
-    <param name="RADAR_NEWOBJ_WEIGHT" value="$(arg RADAR_NEWOBJ_WEIGHT)" />
-    <param name="R_GATE" value="$(arg R_GATE)" />
-    <param name="THETA_GATE" value="$(arg THETA_GATE)" />
-    <param name="VT_GATE" value="$(arg VT_GATE)" />
-    <param name="HALF_LANE_WIDTH" value="$(arg HALF_LANE_WIDTH)" />
-    <param name="RX_GATE" value="$(arg RX_GATE)" />
-    <param name="RY_GATE" value="$(arg RY_GATE)" />
-    <param name="MAX_LOST_CNT" value="$(arg MAX_LOST_CNT)" />
+    <rosparam command="load" file="$(find detection)/param/rear_tracker.yaml" />
   </node>
 
   <!--rviz可视化-->
