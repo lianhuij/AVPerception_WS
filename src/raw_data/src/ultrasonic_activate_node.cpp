@@ -20,10 +20,13 @@ int main (int argc, char** argv){
     can_msgs::Frame f;
     f.id = 0x601;
     f.dlc = 3;
-    f.is_error = f.is_extended = f.is_rtr = false;
-    f.data[0] = ultrasonic_mode;
-    f.data[1] = 0x10;
-    f.data[2] = 0xff;
+    f.is_error = false;
+    f.is_extended = false;
+    f.is_rtr = false;
+    f.data[0] = (uint8_t)ultrasonic_mode;
+    f.data[1] = (uint8_t)0x10;
+    f.data[2] = (uint8_t)0xff;
+    f.header.stamp = ros::Time::now();
     ultrasonic_ctrl_pub.publish(f);
     ros::spinOnce();
   }
