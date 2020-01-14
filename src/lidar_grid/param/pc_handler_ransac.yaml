@@ -4,7 +4,7 @@ TH         : 180         # 极坐标栅格地图角度上的分割数
 grid_size_r: 0.4         # 极坐标栅格地图半径上的分辨率
 grid_size  : 0.2         # 输出栅格大小
 threshold  : 0.15        # 地面点阈值
-cut_width  : 1.7         # 可通行域裁剪宽度
+cut_width  : 2.0         # 可通行域裁剪宽度
 y_width    : 50          # 输出栅格地图一侧宽度
 x_forward  : 100         # 输出栅格地图前向长度
 x_backward : 0           # 输出栅格地图后向长度

@@ -74,6 +74,10 @@ public:
         nh.param<int>("/lidar_grid2/x_backward", x_backward, 0);
         grid_size_th = 2*M_PI/TH;
         radius = R*grid_size_r;
+        for(int i=0; i<4; ++i){
+            left_ultrasonic[i] = 5.0;
+            right_ultrasonic[i] = 5.0;
+        }
     }
     ~LidarCloudHandler() { }
     void rasterization(const sensor_msgs::PointCloud2ConstPtr& input);
@@ -96,6 +100,8 @@ void LidarCloudHandler::right_ultrasonic_cb(const raw_data::Ultrasonic& input){
 //////////////////////////激光雷达点云栅格化及地面可通行区域提取函数///////////////////////////
 void LidarCloudHandler::rasterization(const sensor_msgs::PointCloud2ConstPtr& input)
 {
+    nh.param<float>("/lidar_grid2/ground_z", ground_z, -1.8);
+    nh.param<float>("/lidar_grid2/max_gradient", max_gradient, 0.17);
     clock_t start = clock();
     nav_msgs::GridCells grid_cell;
     grid_cell.header.frame_id = fixed_frame;  //rviz中的fixed frame
@@ -113,10 +119,24 @@ void LidarCloudHandler::rasterization(const sensor_msgs::PointCloud2ConstPtr& in
     //在输入点云中加入超声波数据点
     pcl::PointXYZ ultrasonic_point;
     ultrasonic_point.z = 0;
+    if(left_ultrasonic[1] > 0 && left_ultrasonic[1] < 5.0 && left_ultrasonic[2] > 0 && left_ultrasonic[2] < 5.0){
+        if(fabs(left_ultrasonic[1] - left_ultrasonic[2]) < 0.2){
+            ultrasonic_point.x = 1.6;
+            ultrasonic_point.y = 0.75 + left_ultrasonic[1];
+            cloud_raw_ptr->push_back(ultrasonic_point);
+        }
+    }
+    if(right_ultrasonic[1] > 0 && right_ultrasonic[1] < 5.0 && right_ultrasonic[2] > 0 && right_ultrasonic[2] < 5.0){
+        if(fabs(right_ultrasonic[1] - right_ultrasonic[2]) < 0.2){
+            ultrasonic_point.x = 1.6;
+            ultrasonic_point.y = -0.75 - right_ultrasonic[1];
+            cloud_raw_ptr->push_back(ultrasonic_point);
+        }
+    }
     for(int i=0; i<4; ++i){
         switch (i)
         {
-        case 0: ultrasonic_point.x = 0.9;   break;
+        case 0: ultrasonic_point.x = 1.0;   break;
         case 1: ultrasonic_point.x = 0.65;  break;
         case 2: ultrasonic_point.x = -0.3;  break;
         case 3: ultrasonic_point.x = -1.05; break;
@@ -245,15 +265,15 @@ void LidarCloudHandler::rasterization(const sensor_msgs::PointCloud2ConstPtr& in
     {
         for(int j=0; j<TH; ++j)
         {
-            if(i < (int)(1.6/grid_size_r) || grid[i][j].IsDrivable==false)
+            if(i < (int)(2.0/grid_size_r) || grid[i][j].IsDrivable==false)
             {
-                continue;    //半径1.6m内不处理，非可行驶点不处理
+                continue;    //半径2m内不处理，非可行驶点不处理
             }
             if(grid[i][j].IsChecked)
             {
                 continue;    //跳过已检查过的栅格
             }
-            for(int m=1; i*grid_size_r*grid_size_th*cnt < cut_width; ++m)  //将宽度小于cut_width 的区域裁剪掉
+            for(int m=1; i*grid_size_r*sin(0.5*grid_size_th*cnt)*2 < cut_width; ++m)  //将宽度小于cut_width 的区域裁剪掉
             {//3
                 if(left_flag == 0)
                 {

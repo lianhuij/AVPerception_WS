@@ -102,6 +102,8 @@ void LidarCloudHandler::right_ultrasonic_cb(const raw_data::Ultrasonic& input){
 //////////////////////////激光雷达点云栅格化及地面可通行区域提取函数///////////////////////////
 void LidarCloudHandler::rasterization(const sensor_msgs::PointCloud2ConstPtr& input)
 {
+    nh.param<float>("/lidar_grid/cut_width", cut_width, 1.7);
+    nh.param<float>("/lidar_grid/RANSAC_threshold", RANSAC_threshold, 0.2);
     clock_t start = clock();
     nav_msgs::GridCells grid_cell;
     grid_cell.header.frame_id = fixed_frame;  //rviz中的fixed frame
@@ -209,10 +211,24 @@ void LidarCloudHandler::rasterization(const sensor_msgs::PointCloud2ConstPtr& in
     //在障碍物点云中加入超声波数据点
     pcl::PointXYZ ultrasonic_point;
     ultrasonic_point.z = 0;
+    if(left_ultrasonic[1] > 0 && left_ultrasonic[1] < 5.0 && left_ultrasonic[2] > 0 && left_ultrasonic[2] < 5.0){
+        if(fabs(left_ultrasonic[1] - left_ultrasonic[2]) < 0.2){
+            ultrasonic_point.x = 1.6;
+            ultrasonic_point.y = 0.75 + left_ultrasonic[1];
+            cloud_obstacle_ptr->push_back(ultrasonic_point);
+        }
+    }
+    if(right_ultrasonic[1] > 0 && right_ultrasonic[1] < 5.0 && right_ultrasonic[2] > 0 && right_ultrasonic[2] < 5.0){
+        if(fabs(right_ultrasonic[1] - right_ultrasonic[2]) < 0.2){
+            ultrasonic_point.x = 1.6;
+            ultrasonic_point.y = -0.75 - right_ultrasonic[1];
+            cloud_obstacle_ptr->push_back(ultrasonic_point);
+        }
+    }
     for(int i=0; i<4; ++i){
         switch (i)
         {
-        case 0: ultrasonic_point.x = 0.9;   break;
+        case 0: ultrasonic_point.x = 1.0;   break;
         case 1: ultrasonic_point.x = 0.65;  break;
         case 2: ultrasonic_point.x = -0.3;  break;
         case 3: ultrasonic_point.x = -1.05; break;
@@ -324,15 +340,15 @@ void LidarCloudHandler::rasterization(const sensor_msgs::PointCloud2ConstPtr& in
     {
         for(int j=0; j<TH; ++j)
         {
-            if(i < (int)(1.6/grid_size_r) || grid[i][j].IsDrivable==false)
+            if(i < (int)(2.0/grid_size_r) || grid[i][j].IsDrivable==false)
             {
-                continue;    //半径1.6m内不处理，非可行驶点不处理
+                continue;    //半径2m内不处理，非可行驶点不处理
             }
             if(grid[i][j].IsChecked)
             {
                 continue;    //跳过已检查过的栅格
             }
-            for(int m=1; i*grid_size_r*grid_size_th*cnt < cut_width; ++m)  //将宽度小于cut_width 的区域裁剪掉
+            for(int m=1; i*grid_size_r*sin(0.5*grid_size_th*cnt)*2 < cut_width; ++m)  //将宽度小于cut_width 的区域裁剪掉
             {//3
                 if(left_flag == 0)
                 {
