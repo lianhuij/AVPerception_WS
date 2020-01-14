@@ -1,0 +1,60 @@
+<launch>
+
+  <!--读bag文件>
+  <node pkg="rosbag" type="play" name="player" args="$(find record_data)/bagfiles/191220_f1.bag" respawn="true" /-->
+  
+  <!--连接VLP16-->
+  <include file="$(find velodyne_pointcloud)/launch/VLP16_points.launch" />
+  <!--自车Marker-->
+  <node pkg="lidar_grid" type="ego_car_node" name="ego_car" />
+  <!--激光雷达地平面标定-->
+  <node pkg="lidar_grid" type="lidar_calibration" name="lidar_calibration" >
+    <rosparam command="load" file="$(find lidar_grid)/param/lidar_calibration.yaml" />
+  </node>
+  <!--处理点云输出可通行栅格，RANSAC方法-->
+  <node pkg="lidar_grid" type="lidar_grid" name="lidar_grid" >
+    <rosparam command="load" file="$(find lidar_grid)/param/pc_handler_ransac.yaml" />
+  </node>
+  <!--处理点云输出可通行栅格，梯度方法>
+  <node pkg="lidar_grid" type="lidar_grid2" name="lidar_grid2" >
+    <rosparam command="load" file="$(find lidar_grid)/param/pc_handler_gradient.yaml" />
+  </node-->  
+  <!--激光雷达目标点云聚类-->
+  <node pkg="detection" type="lidar_cluster_node" name="lidar_cluster_node" output="screen">
+    <rosparam command="load" file="$(find detection)/param/lidar_cluster.yaml" />
+  </node>
+  
+  <!--打开CAN端口-->
+  <node pkg="socketcan_bridge" type="socketcan_bridge_node" name="socketcan_bridge_node" />
+  <!--接收MPC单片机CAN原始数据 前毫米波雷达 摄像头-->
+  <node pkg="raw_data" type="MPC_raw_node" name="MPC_raw_node" output="screen">
+    <rosparam command="load" file="$(find raw_data)/param/front_raw.yaml" />
+  </node>  
+  <!--接收MPC单片机CAN原始数据 后双毫米波雷达-->
+  <node pkg="raw_data" type="rear_raw_node" name="rear_raw_node" output="screen">
+    <rosparam command="load" file="$(find raw_data)/param/rear_raw.yaml" />
+  </node>
+  <!--接收MPC单片机CAN原始数据 超声波雷达-->
+  <node pkg="raw_data" type="ultrasonic_activate_node" name="ultrasonic_activate_node" >
+    <rosparam command="load" file="$(find raw_data)/param/ultrasonic_raw.yaml" />
+  </node>
+
+  <!--目标跟踪模块 front-->
+  <node pkg="detection" type="tracker_node" name="tracker_node" output="screen">
+    <rosparam command="load" file="$(find detection)/param/front_tracker.yaml" />
+  </node>
+  <!--目标跟踪模块 rear-->
+  <node pkg="detection" type="rear_tracker_node" name="rear_tracker_node" output="screen">
+    <rosparam command="load" file="$(find detection)/param/rear_tracker.yaml" />
+  </node>
+  <!--超声波处理模块-->
+  <node pkg="detection" type="ultrasonic_node" name="ultrasonic_node" output="screen" >
+    <rosparam command="load" file="$(find detection)/param/ultrasonic_filter.yaml" />
+  </node>
+
+  <!--rviz可视化-->
+  <node pkg="rviz" type="rviz" name="rviz" args="-d $(find detection)/rviz/AVPerception.rviz" required="true"/>   
+  <!--rqt_plot-->
+  <node pkg="rqt_plot" type="rqt_plot" name="rqt_plot" />
+
+</launch>
