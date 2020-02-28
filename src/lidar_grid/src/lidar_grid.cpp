@@ -60,7 +60,7 @@ public:
         right_ultrasonic_sub = nh.subscribe("right_ultrasonic", 10, &LidarCloudHandler::right_ultrasonic_cb, this); //接收话题：right_ultrasonic
 
         grid_pub = nh.advertise<nav_msgs::GridCells>("grid_cell", 1);                    //发布话题：grid_cell
-        time_pub = nh.advertise<std_msgs::Float32>("time", 1);                           //发布话题：time
+        time_pub = nh.advertise<std_msgs::Float32>("time_ransac", 1);                    //发布话题：time_ransac
         ground_z_pub = nh.advertise<std_msgs::Float32>("ground_z", 1);                   //发布话题：ground_z
 
         nh.param<std::string>("/lidar_grid/fixed_frame", fixed_frame, "velodyne");

@@ -1,0 +1,3 @@
+pcd_file   : /home/lhj/AVPerception_WS/src/record_data/pcdfiles/road10_0515.pcd
+fixed_frame: velodyne    # rviz中的fixed frame
+pub_hz     : 10
