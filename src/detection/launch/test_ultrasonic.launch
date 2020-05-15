@@ -20,4 +20,7 @@
   <node pkg="rqt_plot" type="rqt_plot" name="rqt_plot1" />
   <node pkg="rqt_plot" type="rqt_plot" name="rqt_plot2" />
 
+  <!--record data>
+  <node pkg="rosbag" type="record" name="recorder" args="-O $(find record_data)/bagfiles/u2 left_ultrasonic right_ultrasonic" /-->
+
 </launch>

@@ -1,12 +1,12 @@
 <launch>
   
-  <!--读单帧pcd文件-->
+  <!--读单帧pcd文件>
   <node pkg="lidar_grid" type="pcd_read" name="pcd_read" >
     <rosparam command="load" file="$(find lidar_grid)/param/pcd_read.yaml" />
-  </node>   
+  </node-->   
 
-  <!--读bag文件>
-  <node pkg="rosbag" type="play" name="player" args="$(find record_data)/bagfiles/190716_l3.bag" respawn="true" /--> 
+  <!--读bag文件-->
+  <node pkg="rosbag" type="play" name="player" args="$(find record_data)/bagfiles/190703_l2.bag" respawn="true" /> 
 
   <!--自车Marker-->
   <node pkg="lidar_grid" type="ego_car_node" name="ego_car" />
