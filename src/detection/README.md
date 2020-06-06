@@ -50,6 +50,18 @@ publish topic :
 - left_ultrasonic
 - right_ultrasonic
 
+---
+### node : can_send_node
+
+receive topic :  
+- fusion_array
+- radar_fusion_array
+- drivable_map
+
+publish topic :  
+- sent_messages
+
+---
 ### save bag data
 - rosbag record -O file.bag radar_rawArray camera_rawArray lidar_rawArray radar_array lidar_array fusion_array
 - rosbag record -O file.bag -a

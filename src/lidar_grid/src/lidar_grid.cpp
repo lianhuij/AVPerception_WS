@@ -14,6 +14,7 @@
 #include <time.h>
 #include <vector>
 #include "raw_data/Ultrasonic.h"
+#include "lidar_grid/DrivableMap.h"
 
 class Grid
 {
@@ -36,6 +37,7 @@ protected:
     ros::Publisher grid_pub;
     ros::Publisher time_pub;
     ros::Publisher ground_z_pub;
+    ros::Publisher map_pub;
     std::string fixed_frame;
     float left_ultrasonic[4];
     float right_ultrasonic[4];
@@ -62,6 +64,7 @@ public:
         grid_pub = nh.advertise<nav_msgs::GridCells>("grid_cell", 1);                    //发布话题：grid_cell
         time_pub = nh.advertise<std_msgs::Float32>("time_ransac", 1);                    //发布话题：time_ransac
         ground_z_pub = nh.advertise<std_msgs::Float32>("ground_z", 1);                   //发布话题：ground_z
+        map_pub  = nh.advertise<lidar_grid::DrivableMap>("drivable_map", 1);             //发布话题：drivable_map
 
         nh.param<std::string>("/lidar_grid/fixed_frame", fixed_frame, "velodyne");
         nh.param<int>("/lidar_grid/R", R, 60);
@@ -411,6 +414,28 @@ void LidarCloudHandler::rasterization(const sensor_msgs::PointCloud2ConstPtr& in
         }
     }
 
+////////////////////////////发送最小极坐标栅格地图可行驶区域信息/////////////////////////////
+    lidar_grid::DrivableMap map;
+    map.header.stamp = ros::Time::now();
+    for(int j=0; j<TH; ++j)    
+    {
+        if(j>=TH/4 && j<TH/4*3)
+        {
+            map.channel[j] = 0;  //跳过后部区域
+            continue;  
+        }
+        map.channel[j] = R;
+        for(int i=0; i<R; ++i)
+        {
+            if(grid[i][j].IsDrivable == false)
+            {
+                map.channel[j] = i;
+                break;
+            }
+        }
+    }
+    map_pub.publish(map);
+    
 ////////////////////////极坐标系栅格地图转化为直角坐标系可通行区域栅格地图////////////////////
     for(int j=-y_width; j<=y_width; ++j)
     {//1

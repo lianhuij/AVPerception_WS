@@ -25,7 +25,9 @@
   </node>
   
   <!--打开CAN端口>
-  <node pkg="socketcan_bridge" type="socketcan_bridge_node" name="socketcan_bridge_node" /-->
+  <node pkg="socketcan_bridge" type="socketcan_bridge_node" name="socketcan_bridge_node" >
+    <param name="can_device" value="can0" />
+  </node-->  
   <!--接收MPC单片机CAN原始数据 前毫米波雷达 摄像头-->
   <node pkg="raw_data" type="MPC_raw_node" name="MPC_raw_node" output="screen">
     <rosparam command="load" file="$(find raw_data)/param/front_raw.yaml" />

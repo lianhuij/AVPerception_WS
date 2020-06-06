@@ -1,0 +1,12 @@
+<launch>
+
+  <!--打开CAN端口-->
+  <!-- node pkg="socketcan_bridge" type="socketcan_bridge_node" name="socketcan_bridge_node" -->
+    <!--param name="can_device" value="can0" /-->
+    <!--remap from="sent_messages" to="to_dspace" /-->
+  <!-- /node   -->
+
+  <!--打开CAN数据发送节点-->
+  <node pkg="detection" type="can_send_node" name="can_send_node" />
+
+</launch>

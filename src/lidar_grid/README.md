@@ -32,6 +32,7 @@ publish topic :
 - grid_cell
 - time
 - ground_z
+- drivable_map
 
 ---
 ### node : lidar_grid2
@@ -41,6 +42,7 @@ receive topic : cali_pc
 publish topic : 
 - grid_cell
 - time
+- drivable_map
 
 ---
 ### node : pcd_read

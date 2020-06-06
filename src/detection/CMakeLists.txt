@@ -246,3 +246,11 @@ add_dependencies(ultrasonic_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EX
 target_link_libraries(ultrasonic_node
   ${catkin_LIBRARIES}
 )
+
+add_executable(can_send_node
+  src/can_send_node.cpp
+)
+add_dependencies(can_send_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+target_link_libraries(can_send_node
+  ${catkin_LIBRARIES}
+)
